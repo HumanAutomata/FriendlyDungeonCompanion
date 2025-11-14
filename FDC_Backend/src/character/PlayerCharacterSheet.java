@@ -7,8 +7,8 @@ import java.util.Map;
 public class PlayerCharacterSheet extends CharacterSheet{
     
     //full constructor
-    public PlayerCharacterSheet(String name, String description, String dndClass, Map<String, Integer> stats, Map<String, List<Integer>> skills, List<String> attributes){
-        super(name, description, dndClass, stats, skills, attributes);
+    public PlayerCharacterSheet(String name, String description, String dndClass, Map<String, Integer> baseStats, List<String> attributes){
+        super(name, description, dndClass, baseStats, attributes);
     }
     
     //simpler constructor
@@ -18,6 +18,6 @@ public class PlayerCharacterSheet extends CharacterSheet{
 
     //function to view stat breakdown (still needs to be coded)
     public Map<String, Integer> viewStatBreakdown(){
-        return this.stats;
+        return this.baseStats;
     }
 }

@@ -5,8 +5,8 @@ import java.util.Map;
 public class NPCCharacterSheet extends CharacterSheet{
    
     //full constructor
-    public NPCCharacterSheet(String name, String description, String dndClass, Map<String, Integer> stats, Map<String, List<Integer>> skills, List<String> attributes){
-        super(name, description, dndClass, stats, skills, attributes);
+    public NPCCharacterSheet(String name, String description, String dndClass, Map<String, Integer> baseStats, List<String> attributes){
+        super(name, description, dndClass, baseStats, attributes);
     }
     
     //simpler constructor example example
