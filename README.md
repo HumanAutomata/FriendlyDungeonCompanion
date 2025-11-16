@@ -7,5 +7,11 @@ First go to the root directory ./FriendlyDungeonCompanion
 and then run
 
 ```sh
-javac -d out $(find src -name "*.java"); java -cp out app.Main
+javac -d bin $(find src -name "*.java"); java -cp bin app.Main
+```
+
+or in Windows Powershell:
+
+```sh
+javac -d bin $(Get-ChildItem -Recurse -Filter *.java -Path src | Select-Object -ExpandProperty FullName)
 ```
