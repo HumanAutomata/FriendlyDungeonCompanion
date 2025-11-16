@@ -13,5 +13,5 @@ javac -d bin $(find src -name "*.java"); java -cp bin app.Main
 or in Windows Powershell:
 
 ```sh
-javac -d bin $(Get-ChildItem -Recurse -Filter *.java -Path src | Select-Object -ExpandProperty FullName)
+javac -d bin $(Get-ChildItem -Recurse -Filter *.java -Path src | Select-Object -ExpandProperty FullName); java -cp bin app.Main
 ```
