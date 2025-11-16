@@ -11,16 +11,18 @@ public class MainFrame extends JFrame {
     private JPanel container = new JPanel(layout);
 
     public MainFrame() {
-        super("My App");
+        super("Your Friendly Dungeon Companion");
 
         // first page
         container.add(new RoleSelectionPage(this::onRoleSelected), "role");
 
         add(container);
-        setSize(600, 400);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // Sets window default to fullscreen
+        setMinimumSize(new Dimension(1280, 720)); // Specify the minimum panel size
+        setUndecorated(false);
         setVisible(true);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     private void onRoleSelected(Role role) {

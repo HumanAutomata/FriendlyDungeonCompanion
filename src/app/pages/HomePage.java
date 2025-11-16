@@ -12,7 +12,7 @@ public class HomePage extends JPanel {
 
     JTabbedPane tabs = new JTabbedPane();
     tabs.add("Map", new MapTab(role));
-    tabs.add("Notes", new NotesTab(role));
+    tabs.add("Notes", new NotesTab());
     if (role == Role.DM) {
       tabs.add("Tools", new ToolsTab(role));
       tabs.add("NPC Character Sheet", new NPCTab(role));
