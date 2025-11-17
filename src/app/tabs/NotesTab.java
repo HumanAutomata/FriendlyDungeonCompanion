@@ -19,6 +19,7 @@ public class NotesTab extends JPanel {
 
         setLayout(new BorderLayout());
         JTextArea textArea = new JTextArea("Insert text here!");
+        textArea.setText(note.load());
         JScrollPane textContainer = new JScrollPane(textArea);
         textArea.setFont(new Font("Monospaced", Font.BOLD, 18));
         textContainer.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));

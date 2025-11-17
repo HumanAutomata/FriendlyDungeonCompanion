@@ -8,7 +8,7 @@ public class Notes {
 
     public Notes() {
         // store in user home by default
-        this.file = Path.of("./state/notes.txt");
+        this.file = Path.of("./src/app/state/notes.txt");
     }
 
     public String load() {
