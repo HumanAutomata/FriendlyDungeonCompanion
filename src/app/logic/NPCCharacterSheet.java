@@ -1,4 +1,4 @@
-package character;
+package app.logic;
 import java.util.List;
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package character;
+package app.logic;
 public class Item {
     String name;
     String type;

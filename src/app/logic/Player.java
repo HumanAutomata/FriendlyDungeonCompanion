@@ -1,5 +1,4 @@
-package user;
-import character.PlayerCharacterSheet;
+package app.logic;
 
 public class Player {
     PlayerCharacterSheet CharacterSheet;

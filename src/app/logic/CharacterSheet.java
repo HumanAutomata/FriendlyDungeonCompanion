@@ -1,8 +1,9 @@
-package character;
+package app.logic;
 import java.util.HashMap;
 // import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.*;
 
 abstract class CharacterSheet{
 
@@ -20,6 +21,7 @@ abstract class CharacterSheet{
         "Charisma", null,
         "Proficiency Bonus", null
         ));
+    
     // creates a dictionary for the skills in form <name>, {<base modifier>, <proficiency bonus>, <external bonus>}
     public Map<String, Integer[]> stats = new HashMap<String, Integer[]>() {{
         
@@ -45,6 +47,7 @@ abstract class CharacterSheet{
         }
 
     }};
+    
     public List<String> attributes;
     public Inventory inventory;
     

@@ -1,6 +1,5 @@
-package map;
+package app.logic;
 import java.util.List;
-import character.NPCCharacterSheet;
 
 public class DNDMap {
     String imagePath;
