@@ -28,13 +28,15 @@ public class MapTab extends JPanel {
             protected void paintComponent(Graphics g) {
               super.paintComponent(g);
 
-              g.drawImage(img, 0, 0, null);
+              g.drawImage(img, (getWidth()  - img.getWidth())  / 2, (getHeight() - img.getHeight()) / 2, null);
 
               if (showGrid) {
                 g.setColor(new Color(255, 0, 0, 120));
                 int cell = 25;
-                for (int x = 0; x < img.getWidth(); x += cell) g.drawLine(x, 0, x, img.getHeight());
-                for (int y = 0; y < img.getHeight(); y += cell) g.drawLine(0, y, img.getWidth(), y);
+                for (int x = (getWidth() - img.getWidth())  / 2; x < (img.getWidth() + getWidth()) / 2; x += cell) 
+                  g.drawLine(x, (getHeight() - img.getHeight()) / 2, x, (img.getHeight() + getHeight()) / 2);
+                for (int y = (getHeight() - img.getHeight()) / 2; y < (img.getHeight() + getHeight()) / 2; y += cell) 
+                  g.drawLine( (getWidth() - img.getWidth())  / 2, y, (img.getWidth() + getWidth()) / 2, y);
               }
             }
 
