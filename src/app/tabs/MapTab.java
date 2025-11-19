@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseAdapter;
 
 public class MapTab extends JPanel {
 
@@ -14,12 +17,23 @@ public class MapTab extends JPanel {
   private BufferedImage img;
   private JPanel panel;
 
+  // @Override
+  // void mouseMoved(MouseEvent e) {
+  //   int x = e.getX();
+  //   int y = e.getY();
+  //   //System.out.println("X: " + x + ", Y: " + y);
+  // }
+
+
   public MapTab(Role role /*BufferedImage image*/ ) {
 
     setLayout(new BorderLayout());
 
     try {
       img = ImageIO.read(new File("./state/baseMap.png"));
+
+      JLayeredPane poiLayer = new JLayeredPane();
+      poiLayer.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
 
       // draw the image + optional grid
       panel =
@@ -47,6 +61,7 @@ public class MapTab extends JPanel {
             }
           };
 
+      
       JButton gridButton = new JButton("Toggle Grid");
       gridButton.addActionListener(e -> toggleGrid());
 
@@ -60,6 +75,8 @@ public class MapTab extends JPanel {
 
       if (role == Role.DM) {
         add(gridButton, BorderLayout.SOUTH);
+        add(poiLayer);
+        addPOI(poiLayer);
       }
 
     } catch (Exception e) {
@@ -67,8 +84,23 @@ public class MapTab extends JPanel {
     }
   }
 
+  public void addPOI(JLayeredPane pane)  {
+    pane.addMouseListener(new MouseAdapter() {
+          @Override 
+          public void mousePressed(MouseEvent e) {
+            System.out.println(e.getX() + "," + e.getY());
+            JButton button = new JButton("Button");
+            button.setBounds(e.getX(), e.getY(), 30, 30);
+            add(button);
+            pane.setOpaque(false);
+            pane.repaint();
+          }
+        });
+  }
+
   public void toggleGrid() {
     showGrid = !showGrid;
     panel.repaint();
   }
+  
 }
