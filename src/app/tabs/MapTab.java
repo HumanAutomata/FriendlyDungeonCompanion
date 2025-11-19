@@ -1,88 +1,96 @@
 package app.tabs;
 
 import app.Role;
-import app.logic.Map;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseAdapter;
-import javax.swing.JLayeredPane;
 
 public class MapTab extends JPanel {
 
-  private boolean showGrid = false;
   private BufferedImage img;
-  private JLayeredPane panel;
+  private JLayeredPane layerPane;
+  private JPanel overlay;
 
-  // @Override
-  // void mouseMoved(MouseEvent e) {
-  //   int x = e.getX();
-  //   int y = e.getY();
-  //   //System.out.println("X: " + x + ", Y: " + y);
-  // }
-
-
-  public MapTab(Role role /*BufferedImage image*/ ) {
-
+  public MapTab(Role role) {
     setLayout(new BorderLayout());
-
-    JLayeredPane jLayeredPane = new JLayeredPane();
 
     try {
       img = ImageIO.read(new File("./state/baseMap.png"));
 
-      // draw the image + optional grid
-      panel = new JLayeredPane() {
-        @Override
-        protected void paintComponent(Graphics g) {
-          super.paintComponent(g);
-          g.drawImage(img, (getWidth()  - img.getWidth())  / 2, (getHeight() - img.getHeight()) / 2, null);
-        }
+      JPanel imagePanel =
+          new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+              super.paintComponent(g);
+              int x = (getWidth() - img.getWidth()) / 2;
+              int y = (getHeight() - img.getHeight()) / 2;
+              g.drawImage(img, x, y, null);
+            }
 
-        // Scrooling
-        @Override
-        public Dimension getPreferredSize() {
-          return new Dimension(img.getWidth(), img.getHeight());
-        }
-      };
+            @Override
+            public Dimension getPreferredSize() {
+              return new Dimension(img.getWidth(), img.getHeight());
+            }
+          };
+      imagePanel.setOpaque(true);
 
-      JScrollPane scroll = new JScrollPane(panel);
+      overlay = new JPanel(null); // absolute positioning
+      overlay.setOpaque(false);
+      overlay.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
+
+      layerPane = new JLayeredPane();
+      layerPane.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
+
+      imagePanel.setBounds(0, 0, img.getWidth(), img.getHeight());
+      overlay.setBounds(0, 0, img.getWidth(), img.getHeight());
+
+      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
+      layerPane.add(overlay, JLayeredPane.PALETTE_LAYER);
+
+      JScrollPane scroll = new JScrollPane(layerPane);
       scroll.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
 
-      JButton importMap = new JButton("importMap");
+      add(scroll, BorderLayout.CENTER);
 
-      //add(importMap, BorderLayout.NORTH);
-      jLayeredPane.add(scroll, JLayeredPane.DEFAULT_LAYER);
-      scroll.setVisible(true);
+      JButton importMap = new JButton("importMap");
+      //importMap.setBounds(25, 25, 25, 25); //this to make it smaller, like an actual button
+      add(importMap, BorderLayout.NORTH);
 
       if (role == Role.DM) {
+
+        // add button on mouse click
+        layerPane.addMouseListener(
+            new MouseAdapter() {
+              @Override
+              public void mousePressed(MouseEvent e) {
+
+                // button
+                JButton b = new JButton("X");
+                b.setBounds(e.getX() - 10, e.getY() - 10, 25, 25);
+                overlay.add(b);
+                overlay.repaint();
+
+                // delete if right-clicked
+                b.addMouseListener(
+                    new MouseAdapter() {
+                      @Override
+                      public void mousePressed(MouseEvent e) {
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                          overlay.remove(b);
+                          overlay.repaint();
+                        }
+                      }
+                    });
+              }
+            });
       }
 
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
-
-  public void addPOI(JLayeredPane pane)  {
-    pane.addMouseListener(new MouseAdapter() {
-          @Override 
-          public void mousePressed(MouseEvent e) {
-            System.out.println(e.getX() + "," + e.getY());
-            JButton button = new JButton("Button");
-            button.setBounds(e.getX(), e.getY(), 30, 30);
-            add(button);
-            pane.repaint();
-          }
-        });
-  }
-
-  public void toggleGrid() {
-    showGrid = !showGrid;
-    panel.repaint();
-  }
-  
 }
