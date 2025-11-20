@@ -18,10 +18,10 @@ public class MapTab extends JPanel {
   private int imgWidth;
   private int imgHeight;
   private int popupWidth = 800;
-  private int popupHeight = 1000;
+  private int popupHeight = 500;
 
   public MapTab(Role role) {
-    setLayout(new BorderLayout()); // divide tab into  center and 4 quadrants
+    setLayout(new BorderLayout()); // divide tab into center and 4 quadrants
 
     try {
 
@@ -61,7 +61,7 @@ public class MapTab extends JPanel {
       int offsetHeight = (imgHeight - popupHeight) / 2;
       PopupPanel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
       PopupPanel.setBackground(new Color(255, 255, 255, 0));
-      PopupPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+      PopupPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
       // title
       JLabel popupTitle = new JLabel("Point of Interest");
@@ -91,7 +91,6 @@ public class MapTab extends JPanel {
       JTextField pathField = new JTextField();
       pathField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 
-
       // add all components to content
       content.add(title);
       content.add(titleField);
@@ -113,14 +112,22 @@ public class MapTab extends JPanel {
           new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-              System.out.println("saved!");
+              String title_str = titleField.getText();
+              String desc_str = descField.getText();
+              String path_str = pathField.getText();
+              System.out.println("Input title: " + title_str);
+              System.out.println("Input desc: " + desc_str);
+              System.out.println("Input path: " + path_str);
+              layerPane.remove(PopupPanel);
+              layerPane.repaint();
+              // createPOI(titles_str, desc_str, path_str);
+              // draw the POI pane over everything
             }
           });
       cancel.addMouseListener(
           new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-              System.out.println("Deleted");
               layerPane.remove(PopupPanel);
               layerPane.repaint();
             }
@@ -149,6 +156,10 @@ public class MapTab extends JPanel {
       // allow the DM to manage POIs
       if (role == Role.DM) {
 
+        // add button to go into edit mode
+        JCheckBox MapEditMode = new JCheckBox("Edit Map");
+        add(MapEditMode, BorderLayout.SOUTH);
+
         // add button on mouse click
         layerPane.addMouseListener(
             new MouseAdapter() {
@@ -156,7 +167,9 @@ public class MapTab extends JPanel {
               public void mousePressed(MouseEvent e) {
 
                 // Ctrl + Left Click to create a POI
-                if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e)) {
+                if (e.isControlDown()
+                    && SwingUtilities.isLeftMouseButton(e)
+                    && MapEditMode.isSelected()) {
 
                   // button
                   JButton b = new JButton("X");
@@ -169,12 +182,16 @@ public class MapTab extends JPanel {
                       new MouseAdapter() {
                         @Override
                         public void mousePressed(MouseEvent e) {
-                          // delete if right-clicked
-                          if (SwingUtilities.isRightMouseButton(e)) {
+                          // delete if right-clicked in edit mode
+                          if (SwingUtilities.isRightMouseButton(e) && MapEditMode.isSelected()) {
                             POIPanel.remove(b);
                             POIPanel.repaint();
                           } else if (SwingUtilities.isLeftMouseButton(e)) {
-                            layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+                            if (MapEditMode.isSelected()) {
+                              layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+                            } else {
+                              System.out.println("take me to the POI screen!");
+                            }
                           }
                         }
                       });
