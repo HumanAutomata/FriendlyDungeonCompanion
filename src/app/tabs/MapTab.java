@@ -23,6 +23,8 @@ public class MapTab extends JPanel {
   private JPanel PopupPanel;
   private int imgWidth;
   private int imgHeight;
+  private int placeholderWidth = 800;
+  private int placeholderHeight = 800;
   private int popupWidth = 800;
   private int popupHeight = 500;
 
@@ -102,9 +104,9 @@ public class MapTab extends JPanel {
               g.drawString(msg, x, y);
           }
       };
-      placeholder.setPreferredSize(new Dimension(800, 800));
+      placeholder.setPreferredSize(new Dimension(placeholderWidth, placeholderHeight));
       placeholder.setOpaque(true);
-      placeholder.setBounds(0, 0, 800, 800);
+      placeholder.setBounds(0, 0, placeholderWidth, placeholderHeight);
       return placeholder;
   }
 
@@ -664,9 +666,14 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
   private void redraw() {
     // recalc sizes and rebuild image layer
+
+    // if we have an image, get height and width, otherwise use arbitrary height and width for window calculations
       if (img != null) {
         imgWidth = img.getWidth();
         imgHeight = img.getHeight();
+      } else {
+        imgWidth = placeholderWidth;
+        imgHeight = placeholderHeight;
       }
 
       // rebuild image panel
