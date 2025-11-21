@@ -181,8 +181,7 @@ public class MapTab extends JPanel {
               // create new POI from pending coords
               String copiedPath = copyImageToWorldFolder(pathField.getText());
               POI newPOI =
-                  new POI(
-                      titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
+                  new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
               currentPOI.children.add(newPOI);
 
               // attach POI to the pending button (if exists)
@@ -254,9 +253,56 @@ public class MapTab extends JPanel {
     split.setResizeWeight(0.66); // left (map) gets 2/3 space
     add(split, BorderLayout.CENTER);
 
-    // top import button (unchanged)
-    JButton importMap = new JButton("importMap");
-    add(importMap, BorderLayout.NORTH);
+    // top import button
+    JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+    JButton importButton = new JButton("Import World");
+    JButton exportButton = new JButton("Export World");
+
+    topBar.add(importButton);
+    topBar.add(exportButton);
+
+    add(topBar, BorderLayout.NORTH);
+
+    // IMPORT: choose a zip file and extract into ./state/
+    importButton.addActionListener(
+        e -> {
+          JFileChooser chooser = new JFileChooser();
+          chooser.setDialogTitle("Select World ZIP File");
+          int result = chooser.showOpenDialog(MapTab.this);
+
+          if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File zipFile = chooser.getSelectedFile();
+            try {
+              extractZip(zipFile.getAbsolutePath(), "./state/");
+              JOptionPane.showMessageDialog(MapTab.this, "Import complete!\nRestart required.");
+            } catch (Exception ex) {
+              ex.printStackTrace();
+              JOptionPane.showMessageDialog(MapTab.this, "Import failed: " + ex.getMessage());
+            }
+          }
+        });
+
+    // EXPORT: zip the ./state/ folder
+    exportButton.addActionListener(
+        e -> {
+          JFileChooser chooser = new JFileChooser();
+          chooser.setDialogTitle("Save World ZIP");
+          chooser.setSelectedFile(new java.io.File("WorldExport.zip"));
+
+          int result = chooser.showSaveDialog(MapTab.this);
+          if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File outputZip = chooser.getSelectedFile();
+            try {
+              zipFolder("./state/", outputZip.getAbsolutePath());
+              JOptionPane.showMessageDialog(
+                  MapTab.this, "Exported to:\n" + outputZip.getAbsolutePath());
+            } catch (Exception ex) {
+              ex.printStackTrace();
+              JOptionPane.showMessageDialog(MapTab.this, "Export failed: " + ex.getMessage());
+            }
+          }
+        });
 
     mapEditMode = new JCheckBox("Edit Map");
     mapEditMode.setEnabled(false);
@@ -344,6 +390,68 @@ public class MapTab extends JPanel {
 
     drawPOIs();
   }
+
+
+  /** Extracts a ZIP file to a target directory. */
+private void extractZip(String zipPath, String destDir) throws Exception {
+    java.util.zip.ZipInputStream zis =
+            new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipPath));
+    java.util.zip.ZipEntry entry;
+
+    while ((entry = zis.getNextEntry()) != null) {
+        java.io.File outFile = new java.io.File(destDir, entry.getName());
+
+        if (entry.isDirectory()) {
+            outFile.mkdirs();
+        } else {
+            outFile.getParentFile().mkdirs();
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
+
+            byte[] buffer = new byte[4096];
+            int len;
+            while ((len = zis.read(buffer)) > 0) {
+                fos.write(buffer, 0, len);
+            }
+
+            fos.close();
+        }
+        zis.closeEntry();
+    }
+    zis.close();
+}
+
+/** Creates a ZIP of a folder (recursive). */
+private void zipFolder(String srcFolder, String zipPath) throws Exception {
+    java.util.zip.ZipOutputStream zos =
+            new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath));
+    java.io.File folder = new java.io.File(srcFolder);
+
+    zipFolderRecursive(folder, folder.getAbsolutePath(), zos);
+    zos.close();
+}
+
+private void zipFolderRecursive(java.io.File file, String rootPath,
+                                java.util.zip.ZipOutputStream zos) throws Exception {
+    if (file.isDirectory()) {
+        for (java.io.File child : file.listFiles()) {
+            zipFolderRecursive(child, rootPath, zos);
+        }
+    } else {
+        String relativePath = file.getAbsolutePath().substring(rootPath.length() + 1);
+        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+        zos.putNextEntry(entry);
+
+        java.io.FileInputStream fis = new java.io.FileInputStream(file);
+        byte[] buffer = new byte[4096];
+        int len;
+        while ((len = fis.read(buffer)) > 0) {
+            zos.write(buffer, 0, len);
+        }
+        fis.close();
+        zos.closeEntry();
+    }
+}
+
 
   private String copyImageToWorldFolder(String originalPath) {
     try {
