@@ -269,7 +269,6 @@ public class MapTab extends JPanel {
 
     topBar.add(importButton);
     topBar.add(exportButton);
-    topBar.add(editPOIButton);
 
     add(topBar, BorderLayout.NORTH);
 
@@ -366,6 +365,7 @@ public class MapTab extends JPanel {
     if (role == Role.DM) {
       // enable button to go into edit mode
       mapEditMode.setEnabled(true);
+      topBar.add(editPOIButton);
 
       // add mouse listener to layerPane for ctrl+left create
       layerPane.addMouseListener(
