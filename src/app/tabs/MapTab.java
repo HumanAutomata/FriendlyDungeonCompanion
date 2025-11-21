@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
@@ -43,6 +44,9 @@ public class MapTab extends JPanel {
   // pending button & editing poi (used while popup is open)
   private JButton pendingButton = null;
   private POI editingPOI = null;
+
+  private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
+  private JButton backButton;
 
   private void loadMapImage(String path) {
     try {
@@ -236,11 +240,43 @@ public class MapTab extends JPanel {
     JButton importMap = new JButton("importMap");
     add(importMap, BorderLayout.NORTH);
 
+    mapEditMode = new JCheckBox("Edit Map");
+    mapEditMode.setEnabled(false);
+
+    add(mapEditMode, BorderLayout.SOUTH);
+
+    // create bottom bar
+    JPanel bottomBar = new JPanel(new BorderLayout());
+    bottomBar.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+    // Back button (left)
+    backButton = new JButton("Back");
+    backButton.setEnabled(false); // nothing to go back to yet
+    bottomBar.add(backButton, BorderLayout.WEST);
+
+    // Edit Map checkbox (right)
+    bottomBar.add(mapEditMode, BorderLayout.EAST);
+
+    add(bottomBar, BorderLayout.SOUTH);
+
+    // --- Back button action ---
+    backButton.addActionListener(
+        e -> {
+          if (!navigationStack.isEmpty()) {
+            POI previous = navigationStack.pop();
+            openPOI(previous);
+
+            // disable if we are back at root
+            if (previous == rootPOI) {
+              backButton.setEnabled(false);
+            }
+          }
+        });
+
     // allow the DM to manage POIs
     if (role == Role.DM) {
-      // add button to go into edit mode
-      mapEditMode = new JCheckBox("Edit Map");
-      add(mapEditMode, BorderLayout.SOUTH);
+      // enable button to go into edit mode
+      mapEditMode.setEnabled(true);
 
       // add mouse listener to layerPane for ctrl+left create
       layerPane.addMouseListener(
@@ -342,6 +378,8 @@ public class MapTab extends JPanel {
                   layerPane.repaint();
                 } else {
                   // open this POI (navigate into it)
+                  navigationStack.push(currentPOI);
+                  backButton.setEnabled(true);
                   openPOI(child);
                 }
               }
