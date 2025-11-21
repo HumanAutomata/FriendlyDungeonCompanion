@@ -199,6 +199,7 @@ public class MapTab extends JPanel {
             } else {
               editCurrentPOI(currentPOI);;
               editCurrentPOI = false;
+              JOptionPane.showMessageDialog(MapTab.this, "Current Layer Changed!\nRestart required.");
             }
             layerPane.remove(PopupPanel);
             drawPOIs();
