@@ -86,7 +86,7 @@ public class MapTab extends JPanel {
     setLayout(new BorderLayout()); // divide tab into center and 4 quadrants
 
     // load root POI structure
-    rootPOI = POIHandler.load("./state/World.json");
+    rootPOI = POIHandler.load("./state/world/World.json");
     if (rootPOI == null) {
       rootPOI = new POI("World", "World Map", "./state/baseMap.png", 0, 0);
     }
@@ -148,7 +148,6 @@ public class MapTab extends JPanel {
     pathRow.add(pathField, BorderLayout.CENTER);
     pathRow.add(fileButton, BorderLayout.EAST);
 
-
     content.add(titleLabel);
     content.add(titleField);
     content.add(Box.createVerticalStrut(8));
@@ -175,13 +174,15 @@ public class MapTab extends JPanel {
               // update existing POI
               editingPOI.title = titleField.getText();
               editingPOI.description = descField.getText();
-              editingPOI.imagePath = pathField.getText();
+              String copiedPath = copyImageToWorldFolder(pathField.getText());
+              editingPOI.imagePath = copiedPath;
               // position unchanged (user edits metadata only)
             } else {
               // create new POI from pending coords
+              String copiedPath = copyImageToWorldFolder(pathField.getText());
               POI newPOI =
                   new POI(
-                      titleField.getText(), descField.getText(), pathField.getText(), poiX, poiY);
+                      titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
               currentPOI.children.add(newPOI);
 
               // attach POI to the pending button (if exists)
@@ -191,7 +192,7 @@ public class MapTab extends JPanel {
             }
 
             // persist entire tree
-            POIHandler.save(rootPOI, "./state/World.json");
+            POIHandler.save(rootPOI, "./state/world/World.json");
 
             // cleanup
             editingPOI = null;
@@ -344,6 +345,31 @@ public class MapTab extends JPanel {
     drawPOIs();
   }
 
+  private String copyImageToWorldFolder(String originalPath) {
+    try {
+      java.io.File src = new java.io.File(originalPath);
+      if (!src.exists()) return originalPath;
+
+      // Create ./state/world directory if missing
+      java.io.File worldDir = new java.io.File("./state/world");
+      if (!worldDir.exists()) worldDir.mkdirs();
+
+      // Build destination path
+      java.io.File dest = new java.io.File(worldDir, src.getName());
+
+      // Copy file
+      java.nio.file.Files.copy(
+          src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+      // Return path you want stored in JSON
+      return "./state/world/" + src.getName();
+
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return originalPath; // fallback
+    }
+  }
+
   /** Redraws all POI buttons for currentPOI. */
   private void drawPOIs() {
     if (POIPanel == null) return;
@@ -373,7 +399,7 @@ public class MapTab extends JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                   // remove from model, persist, redraw
                   currentPOI.children.remove(child);
-                  POIHandler.save(rootPOI, "./state/World.json");
+                  POIHandler.save(rootPOI, "./state/world/World.json");
                   drawPOIs();
                 }
                 return;
@@ -440,10 +466,6 @@ public class MapTab extends JPanel {
       poiTitleLabel.setText(currentPOI.title);
       poiDescriptionArea.setText(currentPOI.description);
       loadMapImage(poi.imagePath);
-
-      System.out.println(poi.imagePath);
-      System.out.println("width:" + img.getWidth());
-      System.out.println("height:" + img.getHeight());
 
       // recalc sizes and rebuild image layer
       imgWidth = img.getWidth();
