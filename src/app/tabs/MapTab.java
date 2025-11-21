@@ -60,26 +60,7 @@ public class MapTab extends JPanel {
 
   private JPanel drawImage() {
     if (img == null) {
-      JPanel placeholder = new JPanel() {
-          @Override
-          protected void paintComponent(Graphics g) {
-              super.paintComponent(g);
-              g.setColor(Color.LIGHT_GRAY);
-              g.fillRect(0, 0, getWidth(), getHeight());
-              g.setColor(Color.DARK_GRAY);
-              g.setFont(getFont().deriveFont(Font.BOLD, 24f));
-              String msg = "No Map Loaded";
-              FontMetrics fm = g.getFontMetrics();
-              int x = (getWidth() - fm.stringWidth(msg)) / 2;
-              int y = getHeight() / 2;
-              g.drawString(msg, x, y);
-              System.out.println("check");
-          }
-      };
-      placeholder.setPreferredSize(new Dimension(800, 800));
-      placeholder.setOpaque(true);
-      placeholder.setBounds(0, 0, 800, 800);
-      return placeholder;
+      return drawNoMap();
     }
     imgWidth = img.getWidth();
     imgHeight = img.getHeight();
@@ -103,6 +84,28 @@ public class MapTab extends JPanel {
     imagePanel.setOpaque(true);
     imagePanel.setBounds(0, 0, imgWidth, imgHeight);
     return imagePanel;
+  }
+
+  private JPanel drawNoMap() {
+  JPanel placeholder = new JPanel() {
+          @Override
+          protected void paintComponent(Graphics g) {
+              super.paintComponent(g);
+              g.setColor(Color.LIGHT_GRAY);
+              g.fillRect(0, 0, getWidth(), getHeight());
+              g.setColor(Color.DARK_GRAY);
+              g.setFont(getFont().deriveFont(Font.BOLD, 24f));
+              String msg = "No Map Loaded";
+              FontMetrics fm = g.getFontMetrics();
+              int x = (getWidth() - fm.stringWidth(msg)) / 2;
+              int y = getHeight() / 2;
+              g.drawString(msg, x, y);
+          }
+      };
+      placeholder.setPreferredSize(new Dimension(800, 800));
+      placeholder.setOpaque(true);
+      placeholder.setBounds(0, 0, 800, 800);
+      return placeholder;
   }
 
   public MapTab(Role role) {
@@ -199,7 +202,7 @@ public class MapTab extends JPanel {
             } else {
               editCurrentPOI(currentPOI);;
               editCurrentPOI = false;
-              JOptionPane.showMessageDialog(MapTab.this, "Current Layer Changed!\nRestart required.");
+              openPOI(currentPOI);
             }
             layerPane.remove(PopupPanel);
             drawPOIs();
@@ -323,7 +326,6 @@ public class MapTab extends JPanel {
         editCurrentPOI = true;
         setPopupSize(PopupPanel);
         layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
-        //editCurrentPOI(rootPOI);
         drawPOIs();
       }
     );
@@ -452,7 +454,6 @@ private void editCurrentPOI(POI poi) {
   poi.imagePath = copiedPath;
   POIHandler.save(rootPOI, "./state/world/World.json");
 }
-
 
   /** Extracts a ZIP file to a target directory. */
 private void extractZip(String zipPath, String destDir) throws Exception {
@@ -640,16 +641,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
       poiDescriptionArea.setText(currentPOI.description);
       loadMapImage(poi.imagePath);
 
-      // recalc sizes and rebuild image layer
-      imgWidth = img.getWidth();
-      imgHeight = img.getHeight();
-
-      // rebuild image panel
-      layerPane.removeAll();
-      JPanel imagePanel = drawImage();
-      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
-
-      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
+      redraw();
 
       // reset POIPanel size and add back on top
       POIPanel = new JPanel(null);
@@ -668,5 +660,20 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+  }
+
+  private void redraw() {
+    // recalc sizes and rebuild image layer
+      if (img != null) {
+        imgWidth = img.getWidth();
+        imgHeight = img.getHeight();
+      }
+
+      // rebuild image panel
+      layerPane.removeAll();
+      JPanel imagePanel = drawImage();
+      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+
+      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
   }
 }
