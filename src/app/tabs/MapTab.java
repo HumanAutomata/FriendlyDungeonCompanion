@@ -132,6 +132,23 @@ public class MapTab extends JPanel {
     pathField = new JTextField();
     pathField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 
+    JButton fileButton = new JButton("Choose Image File");
+    fileButton.addActionListener(
+        e -> {
+          JFileChooser chooser = new JFileChooser();
+          chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+          int imagePath = chooser.showOpenDialog(MapTab.this);
+          if (imagePath == JFileChooser.APPROVE_OPTION) {
+            pathField.setText(chooser.getSelectedFile().getAbsolutePath());
+          }
+        });
+
+    JPanel pathRow = new JPanel();
+    pathRow.setLayout(new BorderLayout());
+    pathRow.add(pathField, BorderLayout.CENTER);
+    pathRow.add(fileButton, BorderLayout.EAST);
+
+
     content.add(titleLabel);
     content.add(titleField);
     content.add(Box.createVerticalStrut(8));
@@ -139,7 +156,7 @@ public class MapTab extends JPanel {
     content.add(descField);
     content.add(Box.createVerticalStrut(8));
     content.add(pathLabel);
-    content.add(pathField);
+    content.add(pathRow);
 
     PopupPanel.add(content, BorderLayout.CENTER);
 
