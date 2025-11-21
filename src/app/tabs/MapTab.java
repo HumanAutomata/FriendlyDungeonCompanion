@@ -44,20 +44,43 @@ public class MapTab extends JPanel {
   // pending button & editing poi (used while popup is open)
   private JButton pendingButton = null;
   private POI editingPOI = null;
+  private Boolean editCurrentPOI = false;
 
   private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
   private JButton backButton;
 
   private void loadMapImage(String path) {
     try {
-      img = ImageIO.read(new java.io.File(path));
+      img = ImageIO.read(new java.io.File(path)); 
     } catch (Exception ex) {
-      ex.printStackTrace();
+      //ex.printStackTrace();
       img = null;
     }
   }
 
   private JPanel drawImage() {
+    if (img == null) {
+      JPanel placeholder = new JPanel() {
+          @Override
+          protected void paintComponent(Graphics g) {
+              super.paintComponent(g);
+              g.setColor(Color.LIGHT_GRAY);
+              g.fillRect(0, 0, getWidth(), getHeight());
+              g.setColor(Color.DARK_GRAY);
+              g.setFont(getFont().deriveFont(Font.BOLD, 24f));
+              String msg = "No Map Loaded";
+              FontMetrics fm = g.getFontMetrics();
+              int x = (getWidth() - fm.stringWidth(msg)) / 2;
+              int y = getHeight() / 2;
+              g.drawString(msg, x, y);
+              System.out.println("check");
+          }
+      };
+      placeholder.setPreferredSize(new Dimension(800, 800));
+      placeholder.setOpaque(true);
+      placeholder.setBounds(0, 0, 800, 800);
+      return placeholder;
+    }
     imgWidth = img.getWidth();
     imgHeight = img.getHeight();
     JPanel imagePanel =
@@ -88,7 +111,8 @@ public class MapTab extends JPanel {
     // load root POI structure
     rootPOI = POIHandler.load("./state/world/World.json");
     if (rootPOI == null) {
-      rootPOI = new POI("World", "World Map", "./state/baseMap.png", 0, 0);
+      rootPOI = new POI("World", "World Map", null, 0, 0);
+      POIHandler.save(rootPOI, "./state/world/World.json");
     }
     currentPOI = rootPOI;
 
@@ -170,32 +194,12 @@ public class MapTab extends JPanel {
           @Override
           public void mousePressed(MouseEvent e) {
             // If editing an existing POI, update it; otherwise create a new POI
-            if (editingPOI != null && pendingButton != null) {
-              // update existing POI
-              editingPOI.title = titleField.getText();
-              editingPOI.description = descField.getText();
-              String copiedPath = copyImageToWorldFolder(pathField.getText());
-              editingPOI.imagePath = copiedPath;
-              // position unchanged (user edits metadata only)
+            if (!editCurrentPOI) {
+              editPOI(editingPOI, pendingButton);
             } else {
-              // create new POI from pending coords
-              String copiedPath = copyImageToWorldFolder(pathField.getText());
-              POI newPOI =
-                  new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
-              currentPOI.children.add(newPOI);
-
-              // attach POI to the pending button (if exists)
-              if (pendingButton != null) {
-                pendingButton.putClientProperty("poi", newPOI);
-              }
+              editCurrentPOI(currentPOI);;
+              editCurrentPOI = false;
             }
-
-            // persist entire tree
-            POIHandler.save(rootPOI, "./state/world/World.json");
-
-            // cleanup
-            editingPOI = null;
-            pendingButton = null;
             layerPane.remove(PopupPanel);
             drawPOIs();
             layerPane.repaint();
@@ -207,6 +211,8 @@ public class MapTab extends JPanel {
           @Override
           public void mousePressed(MouseEvent e) {
             // if user cancelled creation, remove pending placeholder button
+            if (editCurrentPOI)
+              editCurrentPOI = false;
             if (pendingButton != null && editingPOI == null) {
               POIPanel.remove(pendingButton);
               pendingButton = null;
@@ -258,9 +264,11 @@ public class MapTab extends JPanel {
 
     JButton importButton = new JButton("Import World");
     JButton exportButton = new JButton("Export World");
+    JButton editPOIButton = new JButton("Edit Current Layer");
 
     topBar.add(importButton);
     topBar.add(exportButton);
+    topBar.add(editPOIButton);
 
     add(topBar, BorderLayout.NORTH);
 
@@ -274,8 +282,11 @@ public class MapTab extends JPanel {
           if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File zipFile = chooser.getSelectedFile();
             try {
-              extractZip(zipFile.getAbsolutePath(), "./state/");
+              extractZip(zipFile.getAbsolutePath(), "./state/world");
               JOptionPane.showMessageDialog(MapTab.this, "Import complete!\nRestart required.");
+
+              // have UI reload instead of requiring restart
+
             } catch (Exception ex) {
               ex.printStackTrace();
               JOptionPane.showMessageDialog(MapTab.this, "Import failed: " + ex.getMessage());
@@ -288,13 +299,13 @@ public class MapTab extends JPanel {
         e -> {
           JFileChooser chooser = new JFileChooser();
           chooser.setDialogTitle("Save World ZIP");
-          chooser.setSelectedFile(new java.io.File("WorldExport.zip"));
+          chooser.setSelectedFile(new java.io.File("world.zip"));
 
           int result = chooser.showSaveDialog(MapTab.this);
           if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File outputZip = chooser.getSelectedFile();
             try {
-              zipFolder("./state/", outputZip.getAbsolutePath());
+              zipFolder("./state/world", outputZip.getAbsolutePath());
               JOptionPane.showMessageDialog(
                   MapTab.this, "Exported to:\n" + outputZip.getAbsolutePath());
             } catch (Exception ex) {
@@ -303,6 +314,19 @@ public class MapTab extends JPanel {
             }
           }
         });
+    
+    editPOIButton.addActionListener(
+      e -> {
+        titleField.setText(currentPOI.title != null ? currentPOI.title : "");
+        descField.setText(currentPOI.description != null ? currentPOI.description : "");
+        pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
+        editCurrentPOI = true;
+        setPopupSize(PopupPanel);
+        layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+        //editCurrentPOI(rootPOI);
+        drawPOIs();
+      }
+    );
 
     mapEditMode = new JCheckBox("Edit Map");
     mapEditMode.setEnabled(false);
@@ -390,6 +414,43 @@ public class MapTab extends JPanel {
 
     drawPOIs();
   }
+
+private void editPOI(POI editingPOI, JButton pendingButton) {
+  if (editingPOI != null && pendingButton != null) {
+      // update existing POI
+      editingPOI.title = titleField.getText();
+      editingPOI.description = descField.getText();
+      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      editingPOI.imagePath = copiedPath;
+      // position unchanged (user edits metadata only)
+    } else {
+      // create new POI from pending coords
+      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      POI newPOI =
+          new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
+      currentPOI.children.add(newPOI);
+
+      // attach POI to the pending button (if exists)
+      if (pendingButton != null) {
+        pendingButton.putClientProperty("poi", newPOI);
+      }
+    }
+
+    // persist entire tree
+    POIHandler.save(rootPOI, "./state/world/World.json");
+
+    // cleanup
+    editingPOI = null;
+    pendingButton = null;
+}
+
+private void editCurrentPOI(POI poi) {
+  poi.title = titleField.getText();
+  poi.description = descField.getText();
+  String copiedPath = copyImageToWorldFolder(pathField.getText());
+  poi.imagePath = copiedPath;
+  POIHandler.save(rootPOI, "./state/world/World.json");
+}
 
 
   /** Extracts a ZIP file to a target directory. */
@@ -560,6 +621,9 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
   }
 
   private void setPopupSize(JPanel panel) {
+    if (imgWidth < 600 || imgHeight < 600) {
+      imgWidth = imgHeight = 1000;
+    }
     int offsetWidth = (imgWidth - popupWidth) / 2;
     int offsetHeight = (imgHeight - popupHeight) / 2;
     panel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
