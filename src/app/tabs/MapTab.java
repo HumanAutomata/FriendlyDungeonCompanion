@@ -17,12 +17,9 @@ import javax.swing.*;
  */
 public class MapTab extends JPanel {
 
-  private BufferedImage img;
   private JLayeredPane layerPane;
   private JPanel POIPanel;
   private JPanel PopupPanel;
-  private int imgWidth;
-  private int imgHeight;
   private int placeholderWidth = 800;
   private int placeholderHeight = 800;
   private int popupWidth = 800;
@@ -52,12 +49,12 @@ public class MapTab extends JPanel {
   private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
   private JButton backButton;
 
-  private void loadMapImage(String path) {
+  private BufferedImage loadMapImage(String path) {
     try {
-      img = ImageIO.read(new java.io.File(path)); 
+      return ImageIO.read(new java.io.File(path)); 
     } catch (Exception ex) {
       //ex.printStackTrace();
-      img = null;
+      return null;
     }
   }
 
@@ -65,17 +62,15 @@ public class MapTab extends JPanel {
     if (image == null) {
       return drawNoMap();
     }
-        imgWidth = img.getWidth();
-    imgHeight = img.getHeight();
     JPanel imagePanel =
         new JPanel() {
           @Override
           protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             // offset to draw in the middle
-            int offsetWidth = (getWidth() - img.getWidth()) / 2;
-            int offsetHeight = (getHeight() - img.getHeight()) / 2;
-            g.drawImage(img, offsetWidth, offsetHeight, null);
+            int offsetWidth = (getWidth() - image.getWidth()) / 2;
+            int offsetHeight = (getHeight() - image.getHeight()) / 2;
+            g.drawImage(image, offsetWidth, offsetHeight, null);
           }
 
           // resizing
@@ -279,7 +274,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
                   descField.setText(child.description != null ? child.description : "");
                   pathField.setText(child.imagePath != null ? child.imagePath : "");
                   if (!layerPane.isAncestorOf(PopupPanel)) {
-                    PopupPanel = setPopupSize(PopupPanel);
+                    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
                     layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
@@ -302,33 +297,31 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
   private boolean isInsideImage(int x, int y, BufferedImage image) {
     // imagePanel size
+
+    // pass in POI panel!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     int panelW = POIPanel.getWidth();
     int panelH = POIPanel.getHeight();
-    GetImageDimensions(image);
     // image is centered — compute top-left corner
-    int offsetX = (panelW - imgWidth) / 2;
-    int offsetY = (panelH - imgHeight) / 2;
-    return x >= offsetX && x <= offsetX + imgWidth && y >= offsetY && y <= offsetY + imgHeight;
+    int offsetX = (panelW - image.getWidth()) / 2;
+    int offsetY = (panelH - image.getHeight()) / 2;
+    return x >= offsetX && x <= offsetX + image.getWidth() && y >= offsetY && y <= offsetY + image.getHeight();
   }
 
-  private void GetImageDimensions(BufferedImage image) {
+  private Dimension getImageDimensions(BufferedImage image) {
+    if (image != null) 
+      return new Dimension(image.getWidth(), image.getHeight());
+    return new Dimension(placeholderWidth, placeholderHeight);
+  }
+
+  private JPanel setPopupSize(JPanel panel, BufferedImage image) {
+    int imageWidth = placeholderWidth;
+    int imageHeight = placeholderHeight;
     if (image != null) {
-      imgWidth = image.getWidth();
-      imgHeight = image.getHeight();
-      return;
+      imageWidth = (image.getWidth() >= placeholderWidth) ? image.getWidth() : placeholderWidth;
+      imageHeight = (image.getHeight() >= placeholderHeight) ? image.getHeight() : placeholderHeight;
     }
-    imgWidth = placeholderWidth;
-    imgHeight = placeholderHeight;
-  }
-
-
-  private JPanel setPopupSize(JPanel panel) {
-
-    if (imgWidth < 600 || imgHeight < 600) {
-      imgWidth = imgHeight = 1000;
-    }
-    int offsetWidth = (imgWidth - popupWidth) / 2;
-    int offsetHeight = (imgHeight - popupHeight) / 2;
+    int offsetWidth = (imageWidth - popupWidth) / 2;
+    int offsetHeight = (imageHeight - popupHeight) / 2;
     panel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
     panel.setBackground(new Color(255, 255, 255, 240));
     panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -337,21 +330,22 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
   /** Switches the current view to the given POI (loads its image and children). */
   private void openPOI(POI poi) {
+    BufferedImage image = loadMapImage(poi.imagePath);
     try {
       currentPOI = poi;
       poiTitleLabel.setText(currentPOI.title);
       poiDescriptionArea.setText(currentPOI.description);
-      loadMapImage(poi.imagePath);
+      image = loadMapImage(poi.imagePath);
 
-      redraw(img);
+      redraw(image);
 
       // reset POIPanel size and add back on top
       POIPanel = new JPanel(null);
       POIPanel.setOpaque(false);
-      POIPanel.setBounds(0, 0, imgWidth, imgHeight);
-      POIPanel.setPreferredSize(new Dimension(imgWidth, imgHeight));
+      POIPanel.setBounds(0, 0, getImageDimensions(image).width, getImageDimensions(image).height);
+      POIPanel.setPreferredSize(getImageDimensions(image));
 
-      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+      layerPane.setPreferredSize(getImageDimensions(image));
       layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
 
       // draw children of the new currentPOI
@@ -366,14 +360,10 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
   private void redraw(BufferedImage image) {
     // recalc sizes and rebuild image layer
-
-    // if we have an image, get height and width, otherwise use arbitrary height and width for window calculations
-      GetImageDimensions(image);
-
       // rebuild image panel
       layerPane.removeAll();
-      JPanel imagePanel = drawMap(img);
-      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+      JPanel imagePanel = drawMap(image);
+      layerPane.setPreferredSize(getImageDimensions(image));
 
       layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
   }
@@ -385,9 +375,6 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
       POIHandler.save(rootPOI, worldPath);
     }
     currentPOI = rootPOI;
-
-    // load current map image
-    loadMapImage(currentPOI.imagePath);
   }
 
   public MapTab(Role role) {
@@ -397,16 +384,16 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
     initializeWorld();
 
     // draw the image from the file
-    JPanel imagePanel = drawMap(img);
+    JPanel imagePanel = drawMap(loadMapImage(currentPOI.imagePath));
 
     // draw the POI panel (transparent overlay)
     POIPanel = new JPanel(null);
     POIPanel.setOpaque(false);
-    POIPanel.setBounds(0, 0, imgWidth, imgHeight);
+    POIPanel.setBounds(0, 0, loadMapImage(currentPOI.imagePath).getWidth(), loadMapImage(currentPOI.imagePath).getHeight());
 
     // build the Popup panel (reused for create/edit)
     PopupPanel = new JPanel(new BorderLayout());
-    PopupPanel = setPopupSize(PopupPanel);
+    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
 
     // title
     JLabel popupTitle = new JLabel("Point of Interest");
@@ -507,7 +494,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
     // assemble layered pane
     layerPane = new JLayeredPane();
-    layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+    layerPane.setPreferredSize(new Dimension(loadMapImage(currentPOI.imagePath).getWidth(), loadMapImage(currentPOI.imagePath).getHeight()));
     layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
     layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
 
@@ -596,7 +583,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
         descField.setText(currentPOI.description != null ? currentPOI.description : "");
         pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
         editCurrentPOI = true;
-        PopupPanel = setPopupSize(PopupPanel);
+        PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
         layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
         drawPOIs();
       }
@@ -656,7 +643,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
                 poiX = overlayPoint.x;
                 poiY = overlayPoint.y;
 
-                if (isInsideImage(poiX, poiY, img)) {
+                if (isInsideImage(poiX, poiY, loadMapImage(currentPOI.imagePath))) {
 
                   // create a placeholder button at that location
                   JButton b = new JButton("X");
@@ -677,7 +664,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
                   if (!layerPane.isAncestorOf(PopupPanel)) {
 
-                    PopupPanel = setPopupSize(PopupPanel);
+                    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
                     layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
