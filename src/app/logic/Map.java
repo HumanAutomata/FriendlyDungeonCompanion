@@ -1,66 +1,63 @@
 package app.logic;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 public class Map {
-  /** Extracts a ZIP file to a target directory. */
-    public void extractZip(String zipPath, String destDir) throws Exception {
-        java.util.zip.ZipInputStream zis =
-                new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipPath));
-        java.util.zip.ZipEntry entry;
-
+    // Extract zip folder to target directory
+    public void extractZip(String zipPath, String destDir) throws IOException {
+    Path dest = Paths.get(destDir);
+    try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(Paths.get(zipPath)))) {
+        ZipEntry entry;
         while ((entry = zis.getNextEntry()) != null) {
-            java.io.File outFile = new java.io.File(destDir, entry.getName());
-
+            Path outPath = dest.resolve(entry.getName()).normalize();
+            // If the required directories don't exist, create them
             if (entry.isDirectory()) {
-                outFile.mkdirs();
+                Files.createDirectories(outPath);
             } else {
-                outFile.getParentFile().mkdirs();
-                java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
-
-                byte[] buffer = new byte[4096];
-                int len;
-                while ((len = zis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
+                Files.createDirectories(outPath.getParent()); // Makes sure that the parent file exists
+                try (OutputStream out = Files.newOutputStream(outPath)) {
+                    zis.transferTo(out);
                 }
-                fos.close();
             }
             zis.closeEntry();
+            }
         }
-        zis.close();
     }
 
-    /** Creates a ZIP of a folder (recursive). */
-    public void zipFolder(String srcFolder, String zipPath) throws Exception {
-        java.util.zip.ZipOutputStream zos =
-                new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath));
-        java.io.File folder = new java.io.File(srcFolder);
-
-        zipFolderRecursive(folder, folder.getAbsolutePath(), zos);
-        zos.close();
-    }
-
-    public void zipFolderRecursive(java.io.File file, String rootPath,
-                                    java.util.zip.ZipOutputStream zos) throws Exception {
-        if (file.isDirectory()) {
-            for (java.io.File child : file.listFiles()) {
-                zipFolderRecursive(child, rootPath, zos);
-            }
-        } else {
-            String relativePath = file.getAbsolutePath().substring(rootPath.length() + 1);
-            java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
-            zos.putNextEntry(entry);
-
-            java.io.FileInputStream fis = new java.io.FileInputStream(file);
-            byte[] buffer = new byte[4096];
-            int len;
-            while ((len = fis.read(buffer)) > 0) {
-                zos.write(buffer, 0, len);
-            }
-            fis.close();
-            zos.closeEntry();
+    // Zip world folder to desired location provided by user
+    public void zipFolder(String srcFolder, String zipPath) throws IOException {
+        Path source = Paths.get(srcFolder).toAbsolutePath();
+        Path zip = Paths.get(zipPath);
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip))) {
+            Files.walk(source).forEach(path -> {
+                try {
+                    // Skip directories so we can add files to the zip
+                    if (Files.isDirectory(path)) {
+                        return;
+                    }
+                    String entryName = source.relativize(path).toString();
+                    out.putNextEntry(new ZipEntry(entryName));
+                    try (InputStream in = Files.newInputStream(path)) {
+                        in.transferTo(out);
+                    }
+                    out.closeEntry();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
         }
     }
 

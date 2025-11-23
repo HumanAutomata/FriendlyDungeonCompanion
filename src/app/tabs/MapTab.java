@@ -12,46 +12,47 @@ import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-/**
- * MapTab with POI creation/editing/navigation integrated. Drop-in replacement for your existing
- * MapTab.
- */
 public class MapTab extends JPanel {
 
-  private JLayeredPane layerPane;
-  private JPanel POIPanel;
-  private JPanel PopupPanel;
-  private int placeholderWidth = 800;
-  private int placeholderHeight = 800;
-  private int popupWidth = 800;
-  private int popupHeight = 500;
-  private String worldPath = "./state/world/World.json";
+  private static final int PLACEHOLDERWIDTH = 800;
+  private static final int PLACEHOLDERHEIGHT = 800;
+  private static final int POPUPWIDTH = 800;
+  private static final int POPUPHEIGHT = 500;
+  private static final String WORLDPATH = "./state/world/World.json";
 
-  private int poiX;
-  private int poiY;
+  
+  // poi tracking variables
   private POI rootPOI;
   private POI currentPOI;
   private JLabel poiTitleLabel;
   private JTextArea poiDescriptionArea;
+  private int poiX;
+  private int poiY;
 
-  // popup fields promoted so save listener can access them
-  private JTextField titleField;
-  private JTextField descField;
-  private JTextField pathField;
-
-  // edit-mode checkbox made a field so it can be referenced in helper methods
-  private JCheckBox mapEditMode;
+  // stack variables so we can navigate through POI's
+  private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
+  private JButton backButton;
 
   // pending button & editing poi (used while popup is open)
   private JButton pendingButton = null;
   private POI editingPOI = null;
   private Boolean editCurrentPOI = false;
 
-  private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
-  private JButton backButton;
+  // popup panel variables
+  private JLayeredPane layerPane;
+  private JPanel poiPanel;
+  private JPanel popupPanel;
+  private JTextField titleField;
+  private JTextField descField;
+  private JTextField pathField;
+
+  // edit-mode checkbox made a field so it can be referenced in helper methods
+  private JCheckBox mapEditMode;
   
+  // initalize map helper functions
   private Map mapHelper = new Map();
 
+  // load image from filepath
   private BufferedImage loadMapImage(String path) {
     try {
       return ImageIO.read(new java.io.File(path)); 
@@ -61,7 +62,9 @@ public class MapTab extends JPanel {
     }
   }
 
+  // draws map image to pane
   private JPanel drawMap(BufferedImage image) {
+    // if no map is found, handle accordingly
     if (image == null) {
       return drawNoMap();
     }
@@ -87,7 +90,9 @@ public class MapTab extends JPanel {
     return imagePanel;
   }
 
+  // handles drawing maps when no map is found by providing placeholder
   private JPanel drawNoMap() {
+  // create basic JPanel which simply says "No Map Loaded"
   JPanel placeholder = new JPanel() {
           @Override
           protected void paintComponent(Graphics g) {
@@ -103,12 +108,13 @@ public class MapTab extends JPanel {
               g.drawString(msg, x, y);
           }
       };
-      placeholder.setPreferredSize(new Dimension(placeholderWidth, placeholderHeight));
+      placeholder.setPreferredSize(new Dimension(PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT));
       placeholder.setOpaque(true);
-      placeholder.setBounds(0, 0, placeholderWidth, placeholderHeight);
+      placeholder.setBounds(0, 0, PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT);
       return placeholder;
   }
 
+  // handle logic when editing a POI depending on whether it exists or not
   private void editPOI(POI editingPOI, JButton pendingButton) {
   if (editingPOI != null && pendingButton != null) {
       // update existing POI
@@ -123,35 +129,32 @@ public class MapTab extends JPanel {
       POI newPOI =
           new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
       currentPOI.children.add(newPOI);
-
       // attach POI to the pending button (if exists)
       if (pendingButton != null) {
         pendingButton.putClientProperty("poi", newPOI);
       }
     }
-
-    // persist entire tree
-    POIHandler.save(rootPOI, worldPath);
-
-    // cleanup
+    // update World.json
+    POIHandler.save(rootPOI, WORLDPATH);
+    // reset variables
     editingPOI = null;
     pendingButton = null;
-}
+  }
 
-private void editCurrentPOI(POI poi) {
-  poi.title = titleField.getText();
-  poi.description = descField.getText();
-  String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
-  poi.imagePath = copiedPath;
-  POIHandler.save(rootPOI, worldPath);
-}
+  // handle logic for editing the currently view POI
+  private void editCurrentPOI(POI poi) {
+    poi.title = titleField.getText();
+    poi.description = descField.getText();
+    String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
+    poi.imagePath = copiedPath;
+    POIHandler.save(rootPOI, WORLDPATH);
+  }
 
-  /** Redraws all POI buttons for currentPOI. */
+  // Get and draw all POIs for currently viewed POI
   private void drawPOIs() {
-    if (POIPanel == null) return;
-
-    POIPanel.removeAll();
-
+    if (poiPanel == null) 
+      return;
+    poiPanel.removeAll();
     for (POI child : currentPOI.children) {
       ImageIcon poiIcon = new ImageIcon("./assets/poi.png");
       Image scaled = poiIcon.getImage().getScaledInstance(28, 40, Image.SCALE_SMOOTH);
@@ -166,12 +169,11 @@ private void editCurrentPOI(POI poi) {
       // small visual niceties
       b.setMargin(new Insets(0, 0, 0, 0));
 
-      // clicks on this button:
       b.addMouseListener(
           new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-              // Right-click in edit mode = delete this POI
+              // add confirmation popup before deleting POI and delete POI accordingly
               if (SwingUtilities.isRightMouseButton(e)
                   && mapEditMode != null
                   && mapEditMode.isSelected()) {
@@ -181,24 +183,24 @@ private void editCurrentPOI(POI poi) {
                 if (confirm == JOptionPane.YES_OPTION) {
                   // remove from model, persist, redraw
                   currentPOI.children.remove(child);
-                  POIHandler.save(rootPOI, worldPath);
+                  POIHandler.save(rootPOI, WORLDPATH);
                   drawPOIs();
                 }
                 return;
               }
 
-              // Left-click: if in edit mode -> edit metadata; otherwise open POI map
+              // either navigate to or create POI (if in edit mode)
               if (SwingUtilities.isLeftMouseButton(e)) {
                 if (mapEditMode != null && mapEditMode.isSelected()) {
-                  // edit this POI: show popup pre-filled
+                  // if in edit mode, create POI
                   editingPOI = child;
                   pendingButton = b;
                   titleField.setText(child.title != null ? child.title : "");
                   descField.setText(child.description != null ? child.description : "");
                   pathField.setText(child.imagePath != null ? child.imagePath : "");
-                  if (!layerPane.isAncestorOf(PopupPanel)) {
-                    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
-                    layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+                  if (!layerPane.isAncestorOf(popupPanel)) {
+                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+                    layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
                 } else {
@@ -210,48 +212,46 @@ private void editCurrentPOI(POI poi) {
               }
             }
           });
-
-      POIPanel.add(b);
+      poiPanel.add(b);
     }
-
-    POIPanel.revalidate();
-    POIPanel.repaint();
+    poiPanel.revalidate();
+    poiPanel.repaint();
   }
 
-  private boolean isInsideImage(int x, int y, BufferedImage image) {
-    // imagePanel size
-
-    // pass in POI panel!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    int panelW = POIPanel.getWidth();
-    int panelH = POIPanel.getHeight();
-    // image is centered — compute top-left corner
-    int offsetX = (panelW - image.getWidth()) / 2;
-    int offsetY = (panelH - image.getHeight()) / 2;
+  // checks bounds of image so you can't create POIs outside of image
+  private boolean isInsideImage(int x, int y, BufferedImage image, JPanel panel) {
+    // calculate image bounds from centre of panel
+    int offsetX = (panel.getWidth()- image.getWidth()) / 2;
+    int offsetY = (panel.getHeight() - image.getHeight()) / 2;
     return x >= offsetX && x <= offsetX + image.getWidth() && y >= offsetY && y <= offsetY + image.getHeight();
   }
 
+  // return the dimensions of the image as a dimension object
   private Dimension getImageDimensions(BufferedImage image) {
     if (image != null) 
       return new Dimension(image.getWidth(), image.getHeight());
-    return new Dimension(placeholderWidth, placeholderHeight);
+    // if image is not found, return default size
+    return new Dimension(PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT);
   }
 
+  // returns a popup panel which is located in the middle of the POI image
   private JPanel setPopupSize(JPanel panel, BufferedImage image) {
-    int imageWidth = placeholderWidth;
-    int imageHeight = placeholderHeight;
+    int imageWidth = PLACEHOLDERWIDTH;
+    int imageHeight = PLACEHOLDERHEIGHT;
+    // if dimensions of image are too small, set to default size values
     if (image != null) {
-      imageWidth = (image.getWidth() >= placeholderWidth) ? image.getWidth() : placeholderWidth;
-      imageHeight = (image.getHeight() >= placeholderHeight) ? image.getHeight() : placeholderHeight;
+      imageWidth = (image.getWidth() >= PLACEHOLDERWIDTH) ? image.getWidth() : PLACEHOLDERWIDTH;
+      imageHeight = (image.getHeight() >= PLACEHOLDERHEIGHT) ? image.getHeight() : PLACEHOLDERHEIGHT;
     }
-    int offsetWidth = (imageWidth - popupWidth) / 2;
-    int offsetHeight = (imageHeight - popupHeight) / 2;
-    panel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
+    int offsetWidth = (imageWidth - POPUPWIDTH) / 2;
+    int offsetHeight = (imageHeight - POPUPHEIGHT) / 2;
+    panel.setBounds(offsetWidth, offsetHeight, POPUPWIDTH, POPUPHEIGHT);
     panel.setBackground(new Color(255, 255, 255, 240));
     panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
     return panel;
   }
 
-  /** Switches the current view to the given POI (loads its image and children). */
+  // changes view to currently selected POI and draws its children POI
   private void openPOI(POI poi) {
     BufferedImage image = loadMapImage(poi.imagePath);
     try {
@@ -262,16 +262,16 @@ private void editCurrentPOI(POI poi) {
 
       redraw(image);
 
-      // reset POIPanel size and add back on top
-      POIPanel = new JPanel(null);
-      POIPanel.setOpaque(false);
-      POIPanel.setBounds(0, 0, getImageDimensions(image).width, getImageDimensions(image).height);
-      POIPanel.setPreferredSize(getImageDimensions(image));
+      // reset poiPanel size and add back on top
+      poiPanel = new JPanel(null);
+      poiPanel.setOpaque(false);
+      poiPanel.setBounds(0, 0, getImageDimensions(image).width, getImageDimensions(image).height);
+      poiPanel.setPreferredSize(getImageDimensions(image));
 
       layerPane.setPreferredSize(getImageDimensions(image));
-      layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
+      layerPane.add(poiPanel, JLayeredPane.PALETTE_LAYER);
 
-      // draw children of the new currentPOI
+      // draw children of currentPOI
       drawPOIs();
 
       layerPane.revalidate();
@@ -281,21 +281,21 @@ private void editCurrentPOI(POI poi) {
     }
   }
 
+  // rebuild the entirety of the panels
   private void redraw(BufferedImage image) {
-    // recalc sizes and rebuild image layer
-      // rebuild image panel
-      layerPane.removeAll();
-      JPanel imagePanel = drawMap(image);
-      layerPane.setPreferredSize(getImageDimensions(image));
-
-      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
+    layerPane.removeAll();
+    JPanel imagePanel = drawMap(image);
+    layerPane.setPreferredSize(getImageDimensions(image));
+    layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
   }
 
+  // setup world file and initial POI at startup
   private void initializeWorld() {
-    rootPOI = POIHandler.load(worldPath);
+    rootPOI = POIHandler.load(WORLDPATH);
+    // if we don't have an initial POI, create it and save it
     if (rootPOI == null) {
       rootPOI = new POI("World", "World Map", "", 0, 0);
-      POIHandler.save(rootPOI, worldPath);
+      POIHandler.save(rootPOI, WORLDPATH);
     }
     currentPOI = rootPOI;
   }
@@ -310,9 +310,9 @@ private void editCurrentPOI(POI poi) {
     JPanel imagePanel = drawMap(loadMapImage(currentPOI.imagePath));
 
     // draw the POI panel (transparent overlay)
-    POIPanel = new JPanel(null);
-    POIPanel.setOpaque(false);
-    POIPanel.setBounds(
+    poiPanel = new JPanel(null);
+    poiPanel.setOpaque(false);
+    poiPanel.setBounds(
       0, 
       0, 
       getImageDimensions(loadMapImage(currentPOI.imagePath)).width, 
@@ -320,14 +320,14 @@ private void editCurrentPOI(POI poi) {
     );
 
     // build the Popup panel (reused for create/edit)
-    PopupPanel = new JPanel(new BorderLayout());
-    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
+    popupPanel = new JPanel(new BorderLayout());
+    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
 
     // title
     JLabel popupTitle = new JLabel("Point of Interest");
     popupTitle.setFont(popupTitle.getFont().deriveFont(Font.BOLD, 24f));
     popupTitle.setHorizontalAlignment(SwingConstants.CENTER);
-    PopupPanel.add(popupTitle, BorderLayout.NORTH);
+    popupPanel.add(popupTitle, BorderLayout.NORTH);
 
     // center content (vertical)
     JPanel content = new JPanel();
@@ -373,7 +373,7 @@ private void editCurrentPOI(POI poi) {
     content.add(pathLabel);
     content.add(pathRow);
 
-    PopupPanel.add(content, BorderLayout.CENTER);
+    popupPanel.add(content, BorderLayout.CENTER);
 
     // Save / Cancel buttons
     JPanel buttons = new JPanel(new BorderLayout());
@@ -393,7 +393,7 @@ private void editCurrentPOI(POI poi) {
               editCurrentPOI = false;
               openPOI(currentPOI);
             }
-            layerPane.remove(PopupPanel);
+            layerPane.remove(popupPanel);
             drawPOIs();
             layerPane.repaint();
           }
@@ -407,24 +407,24 @@ private void editCurrentPOI(POI poi) {
             if (editCurrentPOI)
               editCurrentPOI = false;
             if (pendingButton != null && editingPOI == null) {
-              POIPanel.remove(pendingButton);
+              poiPanel.remove(pendingButton);
               pendingButton = null;
             }
             editingPOI = null;
-            layerPane.remove(PopupPanel);
+            layerPane.remove(popupPanel);
             layerPane.repaint();
           }
         });
 
     buttons.add(save, BorderLayout.WEST);
     buttons.add(cancel, BorderLayout.EAST);
-    PopupPanel.add(buttons, BorderLayout.SOUTH);
+    popupPanel.add(buttons, BorderLayout.SOUTH);
 
     // assemble layered pane
     layerPane = new JLayeredPane();
     layerPane.setPreferredSize(getImageDimensions(loadMapImage(currentPOI.imagePath)));
     layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
-    layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
+    layerPane.add(poiPanel, JLayeredPane.PALETTE_LAYER);
 
     // make the layer pane scrollable (resizable) and add it to the tab
     JScrollPane scroll = new JScrollPane(layerPane);
@@ -511,8 +511,8 @@ private void editCurrentPOI(POI poi) {
         descField.setText(currentPOI.description != null ? currentPOI.description : "");
         pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
         editCurrentPOI = true;
-        PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
-        layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+        popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+        layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
         drawPOIs();
       }
     );
@@ -566,12 +566,12 @@ private void editCurrentPOI(POI poi) {
                   && SwingUtilities.isLeftMouseButton(e)
                   && mapEditMode.isSelected()) {
 
-                // convert to POIPanel coords so placement lines up with overlay
-                Point overlayPoint = SwingUtilities.convertPoint(layerPane, e.getPoint(), POIPanel);
+                // convert to poiPanel coords so placement lines up with overlay
+                Point overlayPoint = SwingUtilities.convertPoint(layerPane, e.getPoint(), poiPanel);
                 poiX = overlayPoint.x;
                 poiY = overlayPoint.y;
 
-                if (isInsideImage(poiX, poiY, loadMapImage(currentPOI.imagePath))) {
+                if (isInsideImage(poiX, poiY, loadMapImage(currentPOI.imagePath), poiPanel)) {
 
                   // create a placeholder button at that location
                   ImageIcon poiIcon = new ImageIcon("./assets/poi.png");
@@ -584,8 +584,8 @@ private void editCurrentPOI(POI poi) {
                   b.setBounds(poiX - 10, poiY - 10, 28, 40);
                   // visually make it obvious
                   b.setMargin(new Insets(0, 0, 0, 0));
-                  POIPanel.add(b);
-                  POIPanel.repaint();
+                  poiPanel.add(b);
+                  poiPanel.repaint();
 
                   // store pending button reference so Save can attach a POI
                   pendingButton = b;
@@ -596,10 +596,10 @@ private void editCurrentPOI(POI poi) {
                   descField.setText("");
                   pathField.setText("");
 
-                  if (!layerPane.isAncestorOf(PopupPanel)) {
+                  if (!layerPane.isAncestorOf(popupPanel)) {
 
-                    PopupPanel = setPopupSize(PopupPanel, loadMapImage(currentPOI.imagePath));
-                    layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+                    layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
                 }
