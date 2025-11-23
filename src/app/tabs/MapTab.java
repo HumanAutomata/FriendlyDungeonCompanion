@@ -305,7 +305,7 @@ public class MapTab extends JPanel {
   }
 
   public MapTab(Role role) {
-    setLayout(new BorderLayout()); // divide tab into center and 4 quadrants
+    setLayout(new BorderLayout());
 
     // load POI and map image upon opening tab
     initializeWorld();
@@ -313,7 +313,7 @@ public class MapTab extends JPanel {
     // draw the image from the file
     JPanel imagePanel = drawMap(loadMapImage(currentPOI.imagePath));
 
-    // draw the POI panel (transparent overlay)
+    // draw the POI panel as a transparent layer above the image for display of POIs separate from image
     poiPanel = new JPanel(null);
     poiPanel.setOpaque(false);
     poiPanel.setBounds(
@@ -323,11 +323,11 @@ public class MapTab extends JPanel {
       getImageDimensions(loadMapImage(currentPOI.imagePath)).height
     );
 
-    // build the Popup panel (reused for create/edit)
+/////////////////////////////////////// Popup Panel ///////////////////////////////////////////////////////////////
     popupPanel = new JPanel(new BorderLayout());
     popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
 
-    // title
+    // title of POI
     JLabel popupTitle = new JLabel("Point of Interest");
     popupTitle.setFont(popupTitle.getFont().deriveFont(Font.BOLD, 24f));
     popupTitle.setHorizontalAlignment(SwingConstants.CENTER);
@@ -407,7 +407,7 @@ public class MapTab extends JPanel {
         new MouseAdapter() {
           @Override
           public void mousePressed(MouseEvent e) {
-            // if user cancelled creation, remove pending placeholder button
+            // if user selects cancel, remove pending placeholder button
             if (editCurrentPOI)
               editCurrentPOI = false;
             if (pendingButton != null && editingPOI == null) {
@@ -424,7 +424,9 @@ public class MapTab extends JPanel {
     buttons.add(cancel, BorderLayout.EAST);
     popupPanel.add(buttons, BorderLayout.SOUTH);
 
-    // assemble layered pane
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // assemble layered pane (whole image)
     layerPane = new JLayeredPane();
     layerPane.setPreferredSize(getImageDimensions(loadMapImage(currentPOI.imagePath)));
     layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
@@ -435,20 +437,22 @@ public class MapTab extends JPanel {
     scroll.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
     scroll.setPreferredSize(new Dimension(1000, 1000));
 
-    // --- Right-side POI info panel ---
+    // POI info panel displayed on right-hand side of screen
     JPanel infoPanel = new JPanel();
-    infoPanel.setLayout(new BorderLayout());
+    infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
     infoPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
     poiTitleLabel = new JLabel(currentPOI.title);
-    poiTitleLabel.setFont(poiTitleLabel.getFont().deriveFont(Font.BOLD, 22f));
+    poiTitleLabel.setFont(new Font("Arial", Font.BOLD, 30));
+    poiTitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
     infoPanel.add(poiTitleLabel, BorderLayout.NORTH);
+    infoPanel.add(Box.createVerticalStrut(20));
 
     poiDescriptionArea = new JTextArea(currentPOI.description);
     poiDescriptionArea.setEditable(false);
     poiDescriptionArea.setLineWrap(true);
     poiDescriptionArea.setWrapStyleWord(true);
-    poiDescriptionArea.setFont(new Font("Serif", Font.PLAIN, 16));
+    poiDescriptionArea.setFont(new Font("Arial", Font.PLAIN, 16));
     infoPanel.add(new JScrollPane(poiDescriptionArea), BorderLayout.CENTER);
 
     // Left side = map (2/3), Right side = info (1/3)
@@ -456,13 +460,14 @@ public class MapTab extends JPanel {
     split.setResizeWeight(0.66); // left (map) gets 2/3 space
     add(split, BorderLayout.CENTER);
 
-    // top import button
+    // toolbar at top of map tab
     JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
     JButton importButton = new JButton("Import World");
     JButton exportButton = new JButton("Export World");
     JButton editPOIButton = new JButton("Edit Current Layer");
 
+    // initialize buttons with fancy UI
     rolePage.makeRounded(importButton, 20, rolePage.APP_RED, 18, 20, 10);
     rolePage.makeRounded(exportButton, 20, rolePage.APP_RED, 18, 20, 10);
     rolePage.makeRounded(editPOIButton, 20, rolePage.APP_RED, 18, 20, 10);
@@ -484,7 +489,7 @@ public class MapTab extends JPanel {
             try {
               mapHelper.extractZip(zipFile.getAbsolutePath(), "./state/world");
               initializeWorld();
-              openPOI(currentPOI);
+              openPOI(currentPOI); // reload current POI screen
             } catch (Exception ex) {
               ex.printStackTrace();
               JOptionPane.showMessageDialog(MapTab.this, "Import failed: " + ex.getMessage());
@@ -518,10 +523,10 @@ public class MapTab extends JPanel {
         titleField.setText(currentPOI.title != null ? currentPOI.title : "");
         descField.setText(currentPOI.description != null ? currentPOI.description : "");
         pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
-        editCurrentPOI = true;
+        editCurrentPOI = true; // set that we are editing a POI
         popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
         layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
-        drawPOIs();
+        drawPOIs(); // redraw POIs once done
       }
     );
 
@@ -536,19 +541,19 @@ public class MapTab extends JPanel {
     JPanel bottomBar = new JPanel(new BorderLayout());
     bottomBar.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-    // Back button (left)
+    // back button in bottom left
     backButton = new JButton("Back");
     rolePage.makeRounded(backButton, 20, rolePage.APP_GRAY, 16, 16, 8);
-    backButton.setEnabled(false); // nothing to go back to yet
-    backButton.setVisible(false);
+    backButton.setEnabled(false); // nothing to go back to yet, disable button
+    backButton.setVisible(false); // set back button as invisible when we are at root POI
     bottomBar.add(backButton, BorderLayout.WEST);
 
-    // Edit Map checkbox (right)
+    // edit mode checkbox
     bottomBar.add(mapEditMode, BorderLayout.EAST);
 
     add(bottomBar, BorderLayout.SOUTH);
 
-    // --- Back button action ---
+    // back button logic
     backButton.addActionListener(
         e -> {
           if (!navigationStack.isEmpty()) {
@@ -563,9 +568,9 @@ public class MapTab extends JPanel {
           }
         });
 
-    // allow the DM to manage POIs
+    // DM only actions (edit POIs)
     if (role == Role.DM) {
-      // enable button to go into edit mode
+      // enable and set visible button to go into edit mode
       mapEditMode.setEnabled(true);
       mapEditMode.setVisible(true);
       topBar.add(editPOIButton);
@@ -596,7 +601,7 @@ public class MapTab extends JPanel {
                   b.setBorderPainted(false);
                   b.setFocusPainted(false);
                   b.setOpaque(false);
-                  b.setBounds(poiX - 10, poiY - 10, 28, 40);
+                  b.setBounds(poiX - 12, poiY - 12, 28, 40);
                   // visually make it obvious
                   b.setMargin(new Insets(0, 0, 0, 0));
                   poiPanel.add(b);
@@ -611,6 +616,7 @@ public class MapTab extends JPanel {
                   descField.setText("");
                   pathField.setText("");
 
+                  // if the popup panel doesn't exist yet, add it
                   if (!layerPane.isAncestorOf(popupPanel)) {
 
                     popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
@@ -621,8 +627,8 @@ public class MapTab extends JPanel {
               }
             }
           });
-    } // initial draw of existing POIs for currentPOI
-
+    } 
+    // initial draw of existing POIs for currentPOI
     drawPOIs();
   }
 }

@@ -11,6 +11,7 @@ public class RoleSelectionPage extends JPanel {
     public final Color APP_PURPLE = new Color(120, 80, 200);
     public final Color APP_RED = new Color(186,68,68);
     public final Color APP_GRAY = new Color(45, 43, 47);
+    public final Color APP_LIGHT_PURPLE = new Color(253,226,255);
 
     public void makeRounded(JButton button, int radius, Color color, int fontSize, int borderWidth, int borderHeight) {
         button.setBorder(BorderFactory.createEmptyBorder(borderHeight, borderWidth, borderHeight, borderWidth));
@@ -59,10 +60,6 @@ public class RoleSelectionPage extends JPanel {
         player.addActionListener(e -> callback.accept(Role.PLAYER));
         dm.addActionListener(e -> callback.accept(Role.DM));
 
-
-
-        // Everything centered horizontally
-        setAlignmentX(Component.CENTER_ALIGNMENT);
         add(Box.createVerticalGlue());
         add(title);
         add(Box.createRigidArea(new Dimension(0, 150))); // spacing

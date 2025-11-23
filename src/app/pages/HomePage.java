@@ -58,7 +58,8 @@ public class HomePage extends JPanel {
     tabs.add("Map", new MapTab(role));
     tabs.add("Notes", new NotesTab());
     if (role == Role.DM) {
-      tabs.add("Tools", new ToolsTab(role));
+      // Tools tab has not been implemented
+      //tabs.add("Tools", new ToolsTab(role));
       tabs.add("NPC Character Sheet", new NPCTab(role));
     } else {
       tabs.add("Character Sheet", new CharacterSheetTab(role));
