@@ -27,6 +27,7 @@ public class MapTab extends JPanel {
   private int placeholderHeight = 800;
   private int popupWidth = 800;
   private int popupHeight = 500;
+  private String worldPath = "./state/world/World.json";
 
   private int poiX;
   private int poiY;
@@ -60,11 +61,11 @@ public class MapTab extends JPanel {
     }
   }
 
-  private JPanel drawImage() {
-    if (img == null) {
+  private JPanel drawMap(BufferedImage image) {
+    if (image == null) {
       return drawNoMap();
     }
-    imgWidth = img.getWidth();
+        imgWidth = img.getWidth();
     imgHeight = img.getHeight();
     JPanel imagePanel =
         new JPanel() {
@@ -80,11 +81,11 @@ public class MapTab extends JPanel {
           // resizing
           @Override
           public Dimension getPreferredSize() {
-            return new Dimension(imgWidth, imgHeight);
+            return new Dimension(image.getWidth(), image.getHeight());
           }
         };
     imagePanel.setOpaque(true);
-    imagePanel.setBounds(0, 0, imgWidth, imgHeight);
+    imagePanel.setBounds(0, 0, image.getWidth(), image.getHeight());
     return imagePanel;
   }
 
@@ -110,22 +111,293 @@ public class MapTab extends JPanel {
       return placeholder;
   }
 
-  public MapTab(Role role) {
-    setLayout(new BorderLayout()); // divide tab into center and 4 quadrants
+  private void editPOI(POI editingPOI, JButton pendingButton) {
+  if (editingPOI != null && pendingButton != null) {
+      // update existing POI
+      editingPOI.title = titleField.getText();
+      editingPOI.description = descField.getText();
+      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      editingPOI.imagePath = copiedPath;
+      // position unchanged (user edits metadata only)
+    } else {
+      // create new POI from pending coords
+      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      POI newPOI =
+          new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
+      currentPOI.children.add(newPOI);
 
-    // load root POI structure
-    rootPOI = POIHandler.load("./state/world/World.json");
+      // attach POI to the pending button (if exists)
+      if (pendingButton != null) {
+        pendingButton.putClientProperty("poi", newPOI);
+      }
+    }
+
+    // persist entire tree
+    POIHandler.save(rootPOI, worldPath);
+
+    // cleanup
+    editingPOI = null;
+    pendingButton = null;
+}
+
+private void editCurrentPOI(POI poi) {
+  poi.title = titleField.getText();
+  poi.description = descField.getText();
+  String copiedPath = copyImageToWorldFolder(pathField.getText());
+  poi.imagePath = copiedPath;
+  POIHandler.save(rootPOI, worldPath);
+}
+
+  /** Extracts a ZIP file to a target directory. */
+private void extractZip(String zipPath, String destDir) throws Exception {
+    java.util.zip.ZipInputStream zis =
+            new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipPath));
+    java.util.zip.ZipEntry entry;
+
+    while ((entry = zis.getNextEntry()) != null) {
+        java.io.File outFile = new java.io.File(destDir, entry.getName());
+
+        if (entry.isDirectory()) {
+            outFile.mkdirs();
+        } else {
+            outFile.getParentFile().mkdirs();
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
+
+            byte[] buffer = new byte[4096];
+            int len;
+            while ((len = zis.read(buffer)) > 0) {
+                fos.write(buffer, 0, len);
+            }
+
+            fos.close();
+        }
+        zis.closeEntry();
+    }
+    zis.close();
+}
+
+/** Creates a ZIP of a folder (recursive). */
+private void zipFolder(String srcFolder, String zipPath) throws Exception {
+    java.util.zip.ZipOutputStream zos =
+            new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath));
+    java.io.File folder = new java.io.File(srcFolder);
+
+    zipFolderRecursive(folder, folder.getAbsolutePath(), zos);
+    zos.close();
+}
+
+private void zipFolderRecursive(java.io.File file, String rootPath,
+                                java.util.zip.ZipOutputStream zos) throws Exception {
+    if (file.isDirectory()) {
+        for (java.io.File child : file.listFiles()) {
+            zipFolderRecursive(child, rootPath, zos);
+        }
+    } else {
+        String relativePath = file.getAbsolutePath().substring(rootPath.length() + 1);
+        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
+        zos.putNextEntry(entry);
+
+        java.io.FileInputStream fis = new java.io.FileInputStream(file);
+        byte[] buffer = new byte[4096];
+        int len;
+        while ((len = fis.read(buffer)) > 0) {
+            zos.write(buffer, 0, len);
+        }
+        fis.close();
+        zos.closeEntry();
+    }
+}
+
+
+  private String copyImageToWorldFolder(String originalPath) {
+    try {
+      java.io.File src = new java.io.File(originalPath);
+      if (!src.exists()) return originalPath;
+
+      // Create ./state/world directory if missing
+      java.io.File worldDir = new java.io.File("./state/world");
+      if (!worldDir.exists()) worldDir.mkdirs();
+
+      // Build destination path
+      java.io.File dest = new java.io.File(worldDir, src.getName());
+
+      // Copy file
+      java.nio.file.Files.copy(
+          src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+      // Return path you want stored in JSON
+      return "./state/world/" + src.getName();
+
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return originalPath; // fallback
+    }
+  }
+
+  /** Redraws all POI buttons for currentPOI. */
+  private void drawPOIs() {
+    if (POIPanel == null) return;
+
+    POIPanel.removeAll();
+
+    for (POI child : currentPOI.children) {
+      JButton b = new JButton("X");
+      b.setBounds(child.x - 10, child.y - 10, 25, 25);
+      b.putClientProperty("poi", child);
+
+      // small visual niceties
+      b.setMargin(new Insets(0, 0, 0, 0));
+
+      // clicks on this button:
+      b.addMouseListener(
+          new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+              // Right-click in edit mode = delete this POI
+              if (SwingUtilities.isRightMouseButton(e)
+                  && mapEditMode != null
+                  && mapEditMode.isSelected()) {
+                int confirm =
+                    JOptionPane.showConfirmDialog(
+                        MapTab.this, "Delete this POI?", "Delete", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                  // remove from model, persist, redraw
+                  currentPOI.children.remove(child);
+                  POIHandler.save(rootPOI, worldPath);
+                  drawPOIs();
+                }
+                return;
+              }
+
+              // Left-click: if in edit mode -> edit metadata; otherwise open POI map
+              if (SwingUtilities.isLeftMouseButton(e)) {
+                if (mapEditMode != null && mapEditMode.isSelected()) {
+                  // edit this POI: show popup pre-filled
+                  editingPOI = child;
+                  pendingButton = b;
+                  titleField.setText(child.title != null ? child.title : "");
+                  descField.setText(child.description != null ? child.description : "");
+                  pathField.setText(child.imagePath != null ? child.imagePath : "");
+                  if (!layerPane.isAncestorOf(PopupPanel)) {
+                    PopupPanel = setPopupSize(PopupPanel);
+                    layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
+                  }
+                  layerPane.repaint();
+                } else {
+                  // open this POI (navigate into it)
+                  navigationStack.push(currentPOI);
+                  backButton.setEnabled(true);
+                  openPOI(child);
+                }
+              }
+            }
+          });
+
+      POIPanel.add(b);
+    }
+
+    POIPanel.revalidate();
+    POIPanel.repaint();
+  }
+
+  private boolean isInsideImage(int x, int y, BufferedImage image) {
+    // imagePanel size
+    int panelW = POIPanel.getWidth();
+    int panelH = POIPanel.getHeight();
+    GetImageDimensions(image);
+    // image is centered — compute top-left corner
+    int offsetX = (panelW - imgWidth) / 2;
+    int offsetY = (panelH - imgHeight) / 2;
+    return x >= offsetX && x <= offsetX + imgWidth && y >= offsetY && y <= offsetY + imgHeight;
+  }
+
+  private void GetImageDimensions(BufferedImage image) {
+    if (image != null) {
+      imgWidth = image.getWidth();
+      imgHeight = image.getHeight();
+      return;
+    }
+    imgWidth = placeholderWidth;
+    imgHeight = placeholderHeight;
+  }
+
+
+  private JPanel setPopupSize(JPanel panel) {
+
+    if (imgWidth < 600 || imgHeight < 600) {
+      imgWidth = imgHeight = 1000;
+    }
+    int offsetWidth = (imgWidth - popupWidth) / 2;
+    int offsetHeight = (imgHeight - popupHeight) / 2;
+    panel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
+    panel.setBackground(new Color(255, 255, 255, 240));
+    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    return panel;
+  }
+
+  /** Switches the current view to the given POI (loads its image and children). */
+  private void openPOI(POI poi) {
+    try {
+      currentPOI = poi;
+      poiTitleLabel.setText(currentPOI.title);
+      poiDescriptionArea.setText(currentPOI.description);
+      loadMapImage(poi.imagePath);
+
+      redraw(img);
+
+      // reset POIPanel size and add back on top
+      POIPanel = new JPanel(null);
+      POIPanel.setOpaque(false);
+      POIPanel.setBounds(0, 0, imgWidth, imgHeight);
+      POIPanel.setPreferredSize(new Dimension(imgWidth, imgHeight));
+
+      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+      layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
+
+      // draw children of the new currentPOI
+      drawPOIs();
+
+      layerPane.revalidate();
+      layerPane.repaint();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
+
+  private void redraw(BufferedImage image) {
+    // recalc sizes and rebuild image layer
+
+    // if we have an image, get height and width, otherwise use arbitrary height and width for window calculations
+      GetImageDimensions(image);
+
+      // rebuild image panel
+      layerPane.removeAll();
+      JPanel imagePanel = drawMap(img);
+      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
+
+      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
+  }
+
+  private void initializeWorld() {
+    rootPOI = POIHandler.load(worldPath);
     if (rootPOI == null) {
-      rootPOI = new POI("World", "World Map", null, 0, 0);
-      POIHandler.save(rootPOI, "./state/world/World.json");
+      rootPOI = new POI("World", "World Map", "", 0, 0);
+      POIHandler.save(rootPOI, worldPath);
     }
     currentPOI = rootPOI;
 
     // load current map image
     loadMapImage(currentPOI.imagePath);
+  }
+
+  public MapTab(Role role) {
+    setLayout(new BorderLayout()); // divide tab into center and 4 quadrants
+
+    // load POI and map image upon opening tab
+    initializeWorld();
 
     // draw the image from the file
-    JPanel imagePanel = drawImage();
+    JPanel imagePanel = drawMap(img);
 
     // draw the POI panel (transparent overlay)
     POIPanel = new JPanel(null);
@@ -134,7 +406,7 @@ public class MapTab extends JPanel {
 
     // build the Popup panel (reused for create/edit)
     PopupPanel = new JPanel(new BorderLayout());
-    setPopupSize(PopupPanel);
+    PopupPanel = setPopupSize(PopupPanel);
 
     // title
     JLabel popupTitle = new JLabel("Point of Interest");
@@ -288,10 +560,8 @@ public class MapTab extends JPanel {
             java.io.File zipFile = chooser.getSelectedFile();
             try {
               extractZip(zipFile.getAbsolutePath(), "./state/world");
-              JOptionPane.showMessageDialog(MapTab.this, "Import complete!\nRestart required.");
-
-              // have UI reload instead of requiring restart
-
+              initializeWorld();
+              openPOI(currentPOI);
             } catch (Exception ex) {
               ex.printStackTrace();
               JOptionPane.showMessageDialog(MapTab.this, "Import failed: " + ex.getMessage());
@@ -326,7 +596,7 @@ public class MapTab extends JPanel {
         descField.setText(currentPOI.description != null ? currentPOI.description : "");
         pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
         editCurrentPOI = true;
-        setPopupSize(PopupPanel);
+        PopupPanel = setPopupSize(PopupPanel);
         layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
         drawPOIs();
       }
@@ -386,7 +656,7 @@ public class MapTab extends JPanel {
                 poiX = overlayPoint.x;
                 poiY = overlayPoint.y;
 
-                if (isInsideImage(poiX, poiY)) {
+                if (isInsideImage(poiX, poiY, img)) {
 
                   // create a placeholder button at that location
                   JButton b = new JButton("X");
@@ -407,7 +677,7 @@ public class MapTab extends JPanel {
 
                   if (!layerPane.isAncestorOf(PopupPanel)) {
 
-                    setPopupSize(PopupPanel);
+                    PopupPanel = setPopupSize(PopupPanel);
                     layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
@@ -418,269 +688,5 @@ public class MapTab extends JPanel {
     } // initial draw of existing POIs for currentPOI
 
     drawPOIs();
-  }
-
-private void editPOI(POI editingPOI, JButton pendingButton) {
-  if (editingPOI != null && pendingButton != null) {
-      // update existing POI
-      editingPOI.title = titleField.getText();
-      editingPOI.description = descField.getText();
-      String copiedPath = copyImageToWorldFolder(pathField.getText());
-      editingPOI.imagePath = copiedPath;
-      // position unchanged (user edits metadata only)
-    } else {
-      // create new POI from pending coords
-      String copiedPath = copyImageToWorldFolder(pathField.getText());
-      POI newPOI =
-          new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
-      currentPOI.children.add(newPOI);
-
-      // attach POI to the pending button (if exists)
-      if (pendingButton != null) {
-        pendingButton.putClientProperty("poi", newPOI);
-      }
-    }
-
-    // persist entire tree
-    POIHandler.save(rootPOI, "./state/world/World.json");
-
-    // cleanup
-    editingPOI = null;
-    pendingButton = null;
-}
-
-private void editCurrentPOI(POI poi) {
-  poi.title = titleField.getText();
-  poi.description = descField.getText();
-  String copiedPath = copyImageToWorldFolder(pathField.getText());
-  poi.imagePath = copiedPath;
-  POIHandler.save(rootPOI, "./state/world/World.json");
-}
-
-  /** Extracts a ZIP file to a target directory. */
-private void extractZip(String zipPath, String destDir) throws Exception {
-    java.util.zip.ZipInputStream zis =
-            new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipPath));
-    java.util.zip.ZipEntry entry;
-
-    while ((entry = zis.getNextEntry()) != null) {
-        java.io.File outFile = new java.io.File(destDir, entry.getName());
-
-        if (entry.isDirectory()) {
-            outFile.mkdirs();
-        } else {
-            outFile.getParentFile().mkdirs();
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
-
-            byte[] buffer = new byte[4096];
-            int len;
-            while ((len = zis.read(buffer)) > 0) {
-                fos.write(buffer, 0, len);
-            }
-
-            fos.close();
-        }
-        zis.closeEntry();
-    }
-    zis.close();
-}
-
-/** Creates a ZIP of a folder (recursive). */
-private void zipFolder(String srcFolder, String zipPath) throws Exception {
-    java.util.zip.ZipOutputStream zos =
-            new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath));
-    java.io.File folder = new java.io.File(srcFolder);
-
-    zipFolderRecursive(folder, folder.getAbsolutePath(), zos);
-    zos.close();
-}
-
-private void zipFolderRecursive(java.io.File file, String rootPath,
-                                java.util.zip.ZipOutputStream zos) throws Exception {
-    if (file.isDirectory()) {
-        for (java.io.File child : file.listFiles()) {
-            zipFolderRecursive(child, rootPath, zos);
-        }
-    } else {
-        String relativePath = file.getAbsolutePath().substring(rootPath.length() + 1);
-        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
-        zos.putNextEntry(entry);
-
-        java.io.FileInputStream fis = new java.io.FileInputStream(file);
-        byte[] buffer = new byte[4096];
-        int len;
-        while ((len = fis.read(buffer)) > 0) {
-            zos.write(buffer, 0, len);
-        }
-        fis.close();
-        zos.closeEntry();
-    }
-}
-
-
-  private String copyImageToWorldFolder(String originalPath) {
-    try {
-      java.io.File src = new java.io.File(originalPath);
-      if (!src.exists()) return originalPath;
-
-      // Create ./state/world directory if missing
-      java.io.File worldDir = new java.io.File("./state/world");
-      if (!worldDir.exists()) worldDir.mkdirs();
-
-      // Build destination path
-      java.io.File dest = new java.io.File(worldDir, src.getName());
-
-      // Copy file
-      java.nio.file.Files.copy(
-          src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-      // Return path you want stored in JSON
-      return "./state/world/" + src.getName();
-
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      return originalPath; // fallback
-    }
-  }
-
-  /** Redraws all POI buttons for currentPOI. */
-  private void drawPOIs() {
-    if (POIPanel == null) return;
-
-    POIPanel.removeAll();
-
-    for (POI child : currentPOI.children) {
-      JButton b = new JButton("X");
-      b.setBounds(child.x - 10, child.y - 10, 25, 25);
-      b.putClientProperty("poi", child);
-
-      // small visual niceties
-      b.setMargin(new Insets(0, 0, 0, 0));
-
-      // clicks on this button:
-      b.addMouseListener(
-          new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-              // Right-click in edit mode = delete this POI
-              if (SwingUtilities.isRightMouseButton(e)
-                  && mapEditMode != null
-                  && mapEditMode.isSelected()) {
-                int confirm =
-                    JOptionPane.showConfirmDialog(
-                        MapTab.this, "Delete this POI?", "Delete", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                  // remove from model, persist, redraw
-                  currentPOI.children.remove(child);
-                  POIHandler.save(rootPOI, "./state/world/World.json");
-                  drawPOIs();
-                }
-                return;
-              }
-
-              // Left-click: if in edit mode -> edit metadata; otherwise open POI map
-              if (SwingUtilities.isLeftMouseButton(e)) {
-                if (mapEditMode != null && mapEditMode.isSelected()) {
-                  // edit this POI: show popup pre-filled
-                  editingPOI = child;
-                  pendingButton = b;
-                  titleField.setText(child.title != null ? child.title : "");
-                  descField.setText(child.description != null ? child.description : "");
-                  pathField.setText(child.imagePath != null ? child.imagePath : "");
-                  if (!layerPane.isAncestorOf(PopupPanel)) {
-                    setPopupSize(PopupPanel);
-                    layerPane.add(PopupPanel, JLayeredPane.POPUP_LAYER);
-                  }
-                  layerPane.repaint();
-                } else {
-                  // open this POI (navigate into it)
-                  navigationStack.push(currentPOI);
-                  backButton.setEnabled(true);
-                  openPOI(child);
-                }
-              }
-            }
-          });
-
-      POIPanel.add(b);
-    }
-
-    POIPanel.revalidate();
-    POIPanel.repaint();
-  }
-
-  private boolean isInsideImage(int x, int y) {
-    // imagePanel size
-    int panelW = POIPanel.getWidth();
-    int panelH = POIPanel.getHeight();
-
-    int imgW = img.getWidth();
-    int imgH = img.getHeight();
-
-    // image is centered — compute top-left corner
-    int offsetX = (panelW - imgW) / 2;
-    int offsetY = (panelH - imgH) / 2;
-
-    return x >= offsetX && x <= offsetX + imgW && y >= offsetY && y <= offsetY + imgH;
-  }
-
-  private void setPopupSize(JPanel panel) {
-    if (imgWidth < 600 || imgHeight < 600) {
-      imgWidth = imgHeight = 1000;
-    }
-    int offsetWidth = (imgWidth - popupWidth) / 2;
-    int offsetHeight = (imgHeight - popupHeight) / 2;
-    panel.setBounds(offsetWidth, offsetHeight, popupWidth, popupHeight);
-    panel.setBackground(new Color(255, 255, 255, 240));
-    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-  }
-
-  /** Switches the current view to the given POI (loads its image and children). */
-  private void openPOI(POI poi) {
-    try {
-      currentPOI = poi;
-      poiTitleLabel.setText(currentPOI.title);
-      poiDescriptionArea.setText(currentPOI.description);
-      loadMapImage(poi.imagePath);
-
-      redraw();
-
-      // reset POIPanel size and add back on top
-      POIPanel = new JPanel(null);
-      POIPanel.setOpaque(false);
-      POIPanel.setBounds(0, 0, imgWidth, imgHeight);
-      POIPanel.setPreferredSize(new Dimension(imgWidth, imgHeight));
-
-      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
-      layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
-
-      // draw children of the new currentPOI
-      drawPOIs();
-
-      layerPane.revalidate();
-      layerPane.repaint();
-    } catch (Exception ex) {
-      ex.printStackTrace();
-    }
-  }
-
-  private void redraw() {
-    // recalc sizes and rebuild image layer
-
-    // if we have an image, get height and width, otherwise use arbitrary height and width for window calculations
-      if (img != null) {
-        imgWidth = img.getWidth();
-        imgHeight = img.getHeight();
-      } else {
-        imgWidth = placeholderWidth;
-        imgHeight = placeholderHeight;
-      }
-
-      // rebuild image panel
-      layerPane.removeAll();
-      JPanel imagePanel = drawImage();
-      layerPane.setPreferredSize(new Dimension(imgWidth, imgHeight));
-
-      layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
   }
 }

@@ -15,7 +15,7 @@ public class POIHandler {
         try (FileWriter writer = new FileWriter(filePath)) {
             gsonSaver.toJson(root, writer);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("An error occurred when saving to World.json.");
         }
     }
 
@@ -25,7 +25,7 @@ public class POIHandler {
         try (FileReader r = new FileReader(filePath)) {
             return gsonLoader.fromJson(r, POI.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Skipping loading world: no World.json found.");
             return null;
         }
     }
