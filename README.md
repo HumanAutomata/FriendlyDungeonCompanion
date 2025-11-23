@@ -7,11 +7,11 @@ First go to the root directory ./FriendlyDungeonCompanion
 and then run
 
 ```sh
-javac -d bin $(find src -name "*.java"); java -cp bin app.Main
+javac -cp "lib/*:src" -d bin $(find src -name "*.java"); java -cp "lib/*:bin" app.Main
 ```
 
 or in Windows Powershell:
 
 ```sh
-javac -d bin $(Get-ChildItem -Recurse -Filter *.java -Path src | Select-Object -ExpandProperty FullName); java -cp bin app.Main
+javac -cp "lib/*;src" -d bin (Get-ChildItem -Recurse -Filter *.java -Path src | Select-Object -ExpandProperty FullName); java -cp "lib/*;bin" app.Main
 ```
