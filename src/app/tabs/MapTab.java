@@ -14,11 +14,11 @@ import javax.swing.*;
 
 public class MapTab extends JPanel {
 
-  private static final int PLACEHOLDERWIDTH = 800;
-  private static final int PLACEHOLDERHEIGHT = 800;
-  private static final int POPUPWIDTH = 800;
-  private static final int POPUPHEIGHT = 500;
-  private static final String WORLDPATH = "./state/world/World.json";
+  private static final int PLACEHOLDER_WIDTH = 800;
+  private static final int PLACEHOLDER_HEIGHT = 800;
+  private static final int POPUP_WIDTH = 800;
+  private static final int POPUP_HEIGHT = 500;
+  private static final String WORLD_PATH = "./state/world/World.json";
 
   
   // poi tracking variables
@@ -108,9 +108,9 @@ public class MapTab extends JPanel {
               g.drawString(msg, x, y);
           }
       };
-      placeholder.setPreferredSize(new Dimension(PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT));
+      placeholder.setPreferredSize(new Dimension(PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT));
       placeholder.setOpaque(true);
-      placeholder.setBounds(0, 0, PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT);
+      placeholder.setBounds(0, 0, PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT);
       return placeholder;
   }
 
@@ -135,7 +135,7 @@ public class MapTab extends JPanel {
       }
     }
     // update World.json
-    POIHandler.save(rootPOI, WORLDPATH);
+    POIHandler.save(rootPOI, WORLD_PATH);
     // reset variables
     editingPOI = null;
     pendingButton = null;
@@ -147,7 +147,7 @@ public class MapTab extends JPanel {
     poi.description = descField.getText();
     String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
     poi.imagePath = copiedPath;
-    POIHandler.save(rootPOI, WORLDPATH);
+    POIHandler.save(rootPOI, WORLD_PATH);
   }
 
   // Get and draw all POIs for currently viewed POI
@@ -183,7 +183,7 @@ public class MapTab extends JPanel {
                 if (confirm == JOptionPane.YES_OPTION) {
                   // remove from model, persist, redraw
                   currentPOI.children.remove(child);
-                  POIHandler.save(rootPOI, WORLDPATH);
+                  POIHandler.save(rootPOI, WORLD_PATH);
                   drawPOIs();
                 }
                 return;
@@ -231,21 +231,21 @@ public class MapTab extends JPanel {
     if (image != null) 
       return new Dimension(image.getWidth(), image.getHeight());
     // if image is not found, return default size
-    return new Dimension(PLACEHOLDERWIDTH, PLACEHOLDERHEIGHT);
+    return new Dimension(PLACEHOLDER_WIDTH, PLACEHOLDER_HEIGHT);
   }
 
   // returns a popup panel which is located in the middle of the POI image
   private JPanel setPopupSize(JPanel panel, BufferedImage image) {
-    int imageWidth = PLACEHOLDERWIDTH;
-    int imageHeight = PLACEHOLDERHEIGHT;
+    int imageWidth = PLACEHOLDER_WIDTH;
+    int imageHeight = PLACEHOLDER_HEIGHT;
     // if dimensions of image are too small, set to default size values
     if (image != null) {
-      imageWidth = (image.getWidth() >= PLACEHOLDERWIDTH) ? image.getWidth() : PLACEHOLDERWIDTH;
-      imageHeight = (image.getHeight() >= PLACEHOLDERHEIGHT) ? image.getHeight() : PLACEHOLDERHEIGHT;
+      imageWidth = (image.getWidth() >= PLACEHOLDER_WIDTH) ? image.getWidth() : PLACEHOLDER_WIDTH;
+      imageHeight = (image.getHeight() >= PLACEHOLDER_HEIGHT) ? image.getHeight() : PLACEHOLDER_HEIGHT;
     }
-    int offsetWidth = (imageWidth - POPUPWIDTH) / 2;
-    int offsetHeight = (imageHeight - POPUPHEIGHT) / 2;
-    panel.setBounds(offsetWidth, offsetHeight, POPUPWIDTH, POPUPHEIGHT);
+    int offsetWidth = (imageWidth - POPUP_WIDTH) / 2;
+    int offsetHeight = (imageHeight - POPUP_HEIGHT) / 2;
+    panel.setBounds(offsetWidth, offsetHeight, POPUP_WIDTH, POPUP_HEIGHT);
     panel.setBackground(new Color(255, 255, 255, 240));
     panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
     return panel;
@@ -291,11 +291,11 @@ public class MapTab extends JPanel {
 
   // setup world file and initial POI at startup
   private void initializeWorld() {
-    rootPOI = POIHandler.load(WORLDPATH);
+    rootPOI = POIHandler.load(WORLD_PATH);
     // if we don't have an initial POI, create it and save it
     if (rootPOI == null) {
       rootPOI = new POI("World", "World Map", "", 0, 0);
-      POIHandler.save(rootPOI, WORLDPATH);
+      POIHandler.save(rootPOI, WORLD_PATH);
     }
     currentPOI = rootPOI;
   }
