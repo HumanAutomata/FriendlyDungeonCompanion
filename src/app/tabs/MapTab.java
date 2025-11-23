@@ -3,6 +3,7 @@ package app.tabs;
 import app.Role;
 import app.logic.POI;
 import app.logic.POIHandler;
+import app.logic.Map;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,6 +49,8 @@ public class MapTab extends JPanel {
 
   private java.util.Stack<POI> navigationStack = new java.util.Stack<>();
   private JButton backButton;
+  
+  private Map mapHelper = new Map();
 
   private BufferedImage loadMapImage(String path) {
     try {
@@ -111,12 +114,12 @@ public class MapTab extends JPanel {
       // update existing POI
       editingPOI.title = titleField.getText();
       editingPOI.description = descField.getText();
-      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
       editingPOI.imagePath = copiedPath;
       // position unchanged (user edits metadata only)
     } else {
       // create new POI from pending coords
-      String copiedPath = copyImageToWorldFolder(pathField.getText());
+      String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
       POI newPOI =
           new POI(titleField.getText(), descField.getText(), copiedPath, poiX, poiY);
       currentPOI.children.add(newPOI);
@@ -138,96 +141,10 @@ public class MapTab extends JPanel {
 private void editCurrentPOI(POI poi) {
   poi.title = titleField.getText();
   poi.description = descField.getText();
-  String copiedPath = copyImageToWorldFolder(pathField.getText());
+  String copiedPath = mapHelper.copyImageToWorldFolder(pathField.getText());
   poi.imagePath = copiedPath;
   POIHandler.save(rootPOI, worldPath);
 }
-
-  /** Extracts a ZIP file to a target directory. */
-private void extractZip(String zipPath, String destDir) throws Exception {
-    java.util.zip.ZipInputStream zis =
-            new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipPath));
-    java.util.zip.ZipEntry entry;
-
-    while ((entry = zis.getNextEntry()) != null) {
-        java.io.File outFile = new java.io.File(destDir, entry.getName());
-
-        if (entry.isDirectory()) {
-            outFile.mkdirs();
-        } else {
-            outFile.getParentFile().mkdirs();
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
-
-            byte[] buffer = new byte[4096];
-            int len;
-            while ((len = zis.read(buffer)) > 0) {
-                fos.write(buffer, 0, len);
-            }
-
-            fos.close();
-        }
-        zis.closeEntry();
-    }
-    zis.close();
-}
-
-/** Creates a ZIP of a folder (recursive). */
-private void zipFolder(String srcFolder, String zipPath) throws Exception {
-    java.util.zip.ZipOutputStream zos =
-            new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipPath));
-    java.io.File folder = new java.io.File(srcFolder);
-
-    zipFolderRecursive(folder, folder.getAbsolutePath(), zos);
-    zos.close();
-}
-
-private void zipFolderRecursive(java.io.File file, String rootPath,
-                                java.util.zip.ZipOutputStream zos) throws Exception {
-    if (file.isDirectory()) {
-        for (java.io.File child : file.listFiles()) {
-            zipFolderRecursive(child, rootPath, zos);
-        }
-    } else {
-        String relativePath = file.getAbsolutePath().substring(rootPath.length() + 1);
-        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
-        zos.putNextEntry(entry);
-
-        java.io.FileInputStream fis = new java.io.FileInputStream(file);
-        byte[] buffer = new byte[4096];
-        int len;
-        while ((len = fis.read(buffer)) > 0) {
-            zos.write(buffer, 0, len);
-        }
-        fis.close();
-        zos.closeEntry();
-    }
-}
-
-
-  private String copyImageToWorldFolder(String originalPath) {
-    try {
-      java.io.File src = new java.io.File(originalPath);
-      if (!src.exists()) return originalPath;
-
-      // Create ./state/world directory if missing
-      java.io.File worldDir = new java.io.File("./state/world");
-      if (!worldDir.exists()) worldDir.mkdirs();
-
-      // Build destination path
-      java.io.File dest = new java.io.File(worldDir, src.getName());
-
-      // Copy file
-      java.nio.file.Files.copy(
-          src.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-      // Return path you want stored in JSON
-      return "./state/world/" + src.getName();
-
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      return originalPath; // fallback
-    }
-  }
 
   /** Redraws all POI buttons for currentPOI. */
   private void drawPOIs() {
@@ -236,8 +153,14 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
     POIPanel.removeAll();
 
     for (POI child : currentPOI.children) {
-      JButton b = new JButton("X");
-      b.setBounds(child.x - 10, child.y - 10, 25, 25);
+      ImageIcon poiIcon = new ImageIcon("./assets/poi.png");
+      Image scaled = poiIcon.getImage().getScaledInstance(28, 40, Image.SCALE_SMOOTH);
+      JButton b = new JButton(new ImageIcon(scaled));
+      b.setContentAreaFilled(false);
+      b.setBorderPainted(false);
+      b.setFocusPainted(false);
+      b.setOpaque(false);
+      b.setBounds(child.x - 12, child.y - 12, 28, 40);
       b.putClientProperty("poi", child);
 
       // small visual niceties
@@ -551,7 +474,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
           if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File zipFile = chooser.getSelectedFile();
             try {
-              extractZip(zipFile.getAbsolutePath(), "./state/world");
+              mapHelper.extractZip(zipFile.getAbsolutePath(), "./state/world");
               initializeWorld();
               openPOI(currentPOI);
             } catch (Exception ex) {
@@ -572,7 +495,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
           if (result == JFileChooser.APPROVE_OPTION) {
             java.io.File outputZip = chooser.getSelectedFile();
             try {
-              zipFolder("./state/world", outputZip.getAbsolutePath());
+              mapHelper.zipFolder("./state/world", outputZip.getAbsolutePath());
               JOptionPane.showMessageDialog(
                   MapTab.this, "Exported to:\n" + outputZip.getAbsolutePath());
             } catch (Exception ex) {
@@ -651,8 +574,14 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
                 if (isInsideImage(poiX, poiY, loadMapImage(currentPOI.imagePath))) {
 
                   // create a placeholder button at that location
-                  JButton b = new JButton("X");
-                  b.setBounds(poiX - 10, poiY - 10, 25, 25);
+                  ImageIcon poiIcon = new ImageIcon("./assets/poi.png");
+                  Image scaled = poiIcon.getImage().getScaledInstance(28, 40, Image.SCALE_SMOOTH);
+                  JButton b = new JButton(new ImageIcon(scaled));
+                  b.setContentAreaFilled(false);
+                  b.setBorderPainted(false);
+                  b.setFocusPainted(false);
+                  b.setOpaque(false);
+                  b.setBounds(poiX - 10, poiY - 10, 28, 40);
                   // visually make it obvious
                   b.setMargin(new Insets(0, 0, 0, 0));
                   POIPanel.add(b);

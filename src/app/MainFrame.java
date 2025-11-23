@@ -13,6 +13,12 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Your Friendly Dungeon Companion");
 
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
         // first page
         container.add(new RoleSelectionPage(this::onRoleSelected), "role");
 
