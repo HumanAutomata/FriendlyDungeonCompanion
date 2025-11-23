@@ -389,7 +389,12 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
     // draw the POI panel (transparent overlay)
     POIPanel = new JPanel(null);
     POIPanel.setOpaque(false);
-    POIPanel.setBounds(0, 0, loadMapImage(currentPOI.imagePath).getWidth(), loadMapImage(currentPOI.imagePath).getHeight());
+    POIPanel.setBounds(
+      0, 
+      0, 
+      getImageDimensions(loadMapImage(currentPOI.imagePath)).width, 
+      getImageDimensions(loadMapImage(currentPOI.imagePath)).height
+    );
 
     // build the Popup panel (reused for create/edit)
     PopupPanel = new JPanel(new BorderLayout());
@@ -494,7 +499,7 @@ private void zipFolderRecursive(java.io.File file, String rootPath,
 
     // assemble layered pane
     layerPane = new JLayeredPane();
-    layerPane.setPreferredSize(new Dimension(loadMapImage(currentPOI.imagePath).getWidth(), loadMapImage(currentPOI.imagePath).getHeight()));
+    layerPane.setPreferredSize(getImageDimensions(loadMapImage(currentPOI.imagePath)));
     layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
     layerPane.add(POIPanel, JLayeredPane.PALETTE_LAYER);
 
