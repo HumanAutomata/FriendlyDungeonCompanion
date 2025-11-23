@@ -1,6 +1,8 @@
 package app.tabs;
 
 import app.Role;
+import app.MainFrame;
+import app.pages.RoleSelectionPage;
 import app.logic.POI;
 import app.logic.POIHandler;
 import app.logic.Map;
@@ -51,6 +53,7 @@ public class MapTab extends JPanel {
   
   // initalize map helper functions
   private Map mapHelper = new Map();
+  private RoleSelectionPage rolePage = new RoleSelectionPage(null);
 
   // load image from filepath
   private BufferedImage loadMapImage(String path) {
@@ -207,6 +210,7 @@ public class MapTab extends JPanel {
                   // open this POI (navigate into it)
                   navigationStack.push(currentPOI);
                   backButton.setEnabled(true);
+                  backButton.setVisible(true);
                   openPOI(child);
                 }
               }
@@ -459,6 +463,10 @@ public class MapTab extends JPanel {
     JButton exportButton = new JButton("Export World");
     JButton editPOIButton = new JButton("Edit Current Layer");
 
+    rolePage.makeRounded(importButton, 20, rolePage.APP_RED, 18, 20, 10);
+    rolePage.makeRounded(exportButton, 20, rolePage.APP_RED, 18, 20, 10);
+    rolePage.makeRounded(editPOIButton, 20, rolePage.APP_RED, 18, 20, 10);
+
     topBar.add(importButton);
     topBar.add(exportButton);
 
@@ -517,8 +525,10 @@ public class MapTab extends JPanel {
       }
     );
 
-    mapEditMode = new JCheckBox("Edit Map");
+    mapEditMode = new JCheckBox("Edit Mode");
+    mapEditMode.setFont(new Font("Arial", Font.PLAIN, 16));
     mapEditMode.setEnabled(false);
+    mapEditMode.setVisible(false);
 
     add(mapEditMode, BorderLayout.SOUTH);
 
@@ -528,7 +538,9 @@ public class MapTab extends JPanel {
 
     // Back button (left)
     backButton = new JButton("Back");
+    rolePage.makeRounded(backButton, 20, rolePage.APP_GRAY, 16, 16, 8);
     backButton.setEnabled(false); // nothing to go back to yet
+    backButton.setVisible(false);
     bottomBar.add(backButton, BorderLayout.WEST);
 
     // Edit Map checkbox (right)
@@ -546,6 +558,7 @@ public class MapTab extends JPanel {
             // disable if we are back at root
             if (previous == rootPOI) {
               backButton.setEnabled(false);
+              backButton.setVisible(false);
             }
           }
         });
@@ -554,7 +567,9 @@ public class MapTab extends JPanel {
     if (role == Role.DM) {
       // enable button to go into edit mode
       mapEditMode.setEnabled(true);
+      mapEditMode.setVisible(true);
       topBar.add(editPOIButton);
+      bottomBar.add(mapEditMode);
 
       // add mouse listener to layerPane for ctrl+left create
       layerPane.addMouseListener(

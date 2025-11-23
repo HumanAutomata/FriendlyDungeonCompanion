@@ -4,11 +4,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 import app.Role;
+import app.MainFrame;
 
 public class RoleSelectionPage extends JPanel {
 
-    private void makeRounded(JButton button, int radius) {
-        button.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+    public final Color APP_PURPLE = new Color(120, 80, 200);
+    public final Color APP_RED = new Color(186,68,68);
+    public final Color APP_GRAY = new Color(45, 43, 47);
+
+    public void makeRounded(JButton button, int radius, Color color, int fontSize, int borderWidth, int borderHeight) {
+        button.setBorder(BorderFactory.createEmptyBorder(borderHeight, borderWidth, borderHeight, borderWidth));
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
 
@@ -28,6 +33,10 @@ public class RoleSelectionPage extends JPanel {
                 g2d.dispose();
             }
         });
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setFont(new Font("Arial", Font.PLAIN, fontSize));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE); 
     }
 
     public RoleSelectionPage(Consumer<Role> callback) {
@@ -42,22 +51,10 @@ public class RoleSelectionPage extends JPanel {
         login.setFont(new Font("Arial", Font.PLAIN, 50));
 
         JButton player = new JButton("Player");
-        player.setAlignmentX(Component.CENTER_ALIGNMENT);
-        player.setFont(new Font("Arial", Font.PLAIN, 50));
-        player.setBackground(new Color(186, 68, 68));
-        player.setForeground(Color.WHITE); 
-        player.setOpaque(true);
-        player.setContentAreaFilled(true);
-        makeRounded(player, 100);
+        makeRounded(player, 100, APP_RED, 50, 40, 20);
 
         JButton dm = new JButton("Dungeon Master");
-        dm.setAlignmentX(Component.CENTER_ALIGNMENT);
-        dm.setFont(new Font("Arial", Font.PLAIN, 50));
-        dm.setBackground(new Color(118, 64, 205));
-        dm.setForeground(Color.WHITE); 
-        dm.setOpaque(true);
-        dm.setContentAreaFilled(true);
-        makeRounded(dm, 100);
+        makeRounded(dm, 100, APP_PURPLE, 50, 40, 20);
 
         player.addActionListener(e -> callback.accept(Role.PLAYER));
         dm.addActionListener(e -> callback.accept(Role.DM));

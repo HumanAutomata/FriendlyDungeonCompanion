@@ -1,6 +1,7 @@
 package app.pages;
 
 import app.Role;
+import app.pages.RoleSelectionPage;
 import app.tabs.*;
 import java.awt.*;
 import javax.swing.*;
@@ -10,14 +11,13 @@ import java.awt.*;
 
 class ModernTabbedUI extends BasicTabbedPaneUI {
 
-    private final Color activeColor = new Color(120, 80, 200);   // purple (active)
-    private final Color inactiveColor = new Color(45, 43, 47);  // dark gray
+    RoleSelectionPage rolePage = new RoleSelectionPage(null);
 
     @Override
     protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected) {
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        Color fill = isSelected ? activeColor : inactiveColor;
+        Color fill = isSelected ? rolePage.APP_PURPLE : rolePage.APP_GRAY;
         g2d.setColor(fill);
         int arc = 18;
         g2d.fillRoundRect(x + 4, y + 6, w - 8, h - 12, arc, arc);
