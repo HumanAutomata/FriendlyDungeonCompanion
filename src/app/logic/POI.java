@@ -1,4 +1,4 @@
-package map;
+package app.logic;
 
 public class POI {
     String name;

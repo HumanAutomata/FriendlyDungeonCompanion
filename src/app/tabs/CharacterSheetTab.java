@@ -1,130 +1,261 @@
 package app.tabs;
 
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
 import javax.swing.*;
-import javax.swing.border.Border;
+// import javax.swing.border.Border;
 import java.awt.*;
 import app.Role;
+import app.logic.PlayerCharacterSheet;
 
 public class CharacterSheetTab extends JPanel {
 
+    public PlayerCharacterSheet characterSheet = new PlayerCharacterSheet();
+    
     public JScrollPane scrollPane = new JScrollPane();
 
     ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
-    public JTextField name = new JTextField();
-    public JTextField race = new JTextField();
-    public JTextField characterClass = new JTextField();
-    public JTextField level = new JTextField();
-    public JTextField background= new JTextField();
-    public JTextField alignment = new JTextField();
+    private JTextField name = new JTextField();
+    private JTextField race = new JTextField();
+    private JTextField characterClass = new JTextField();
+    private JTextField level = new JTextField();
+    private JTextField background= new JTextField();
+    private JTextField alignment = new JTextField();
+    // character info map - Gabe likes his maps
+    Map<String, JTextField> characterInfo = new HashMap<String, JTextField>() {{
+        put("name", name);
+        put("race", race);
+        put("characterClass", characterClass);
+        put("level", level);
+        put("background", background);
+        put("alignment", alignment);
+    }};
+
     ////////////////////////////////////////////////////////////////////////////////////////////SPELL INFO
-    public JTextField spellCastingAbility = new JTextField();
-    public JTextField spellSaveDC = new JTextField();
-    public JTextField spellAttackBonus = new JTextField();
-    public JTextField sorcererPoints = new JTextField();
+    private JTextField spellCastingAbility = new JTextField();
+    private JTextField spellSaveDC = new JTextField();
+    private JTextField spellAttackBonus = new JTextField();
+    private JTextField sorcererPoints = new JTextField();
+    // spell info map - Gabe likes his maps
+    Map<String, JTextField> spellStats = new HashMap<String, JTextField>() {{
+        put("spellCastingAbility", spellCastingAbility);
+        put("spellSaveDC", spellSaveDC);
+        put("spellAttackBonus", spellAttackBonus);
+        put("sorcererPoints", sorcererPoints);
+    }};
+
     ////////////////////////////////////////////////////////////////////////////////////////////ABILITIES
-    public JTextField strength = new JTextField();
-    public JTextField altStrength = new JTextField(5);
-    public JTextField dexterity = new JTextField();
-    public JTextField altDexterity = new JTextField();
-    public JTextField constitution = new JTextField();
-    public JTextField altConstitution = new JTextField();
-    public JTextField intelligence = new JTextField();
-    public JTextField altIntelligence = new JTextField();
-    public JTextField wisdom = new JTextField();
-    public JTextField altWisdom = new JTextField();
-    public JTextField charisma = new JTextField();
-    public JTextField altCharisma = new JTextField();
+    private JTextField strength = new JTextField();
+    private JTextField altStrength = new JTextField(5);
+    private JTextField dexterity = new JTextField();
+    private JTextField altDexterity = new JTextField();
+    private JTextField constitution = new JTextField();
+    private JTextField altConstitution = new JTextField();
+    private JTextField intelligence = new JTextField();
+    private JTextField altIntelligence = new JTextField();
+    private JTextField wisdom = new JTextField();
+    private JTextField altWisdom = new JTextField();
+    private JTextField charisma = new JTextField();
+    private JTextField altCharisma = new JTextField();
+    // abilities maps - Gabe likes his maps
+    private Map<String, JTextField> abilities = new HashMap<String, JTextField>() {{
+        put("strength", strength);
+        put("dexterity", dexterity);
+        put("constitution", constitution);
+        put("intelligence", intelligence);
+        put("wisdom", wisdom);
+        put("charisma", charisma);
+    }};
+    private Map<String, JTextField> abilitiesMod = new HashMap<String, JTextField>() {{
+        put("strength", altStrength);
+        put("dexterity", altDexterity);
+        put("constitution", altConstitution);
+        put("intelligence", altIntelligence);
+        put("wisdom", altWisdom);
+        put("charisma", altCharisma);
+    }};
+
     ////////////////////////////////////////////////////////////////////////////////////////////SKILLS
-    public JTextField inspiration = new JTextField(5);
-    public JTextField proficiencyBonus = new JTextField(5);
-    public JTextField passiveWisdom = new JTextField(5);
+    private JTextField inspiration = new JTextField(5);
+    private JTextField proficiencyBonus = new JTextField(5);
+    private JTextField passiveWisdom = new JTextField(5);
+    // bonuses map - Gabe likes his maps
+    Map<String, JTextField> bonuses = new HashMap<String, JTextField>() {{
+        put("inspiration", inspiration);
+        put("proficiencyBonus", proficiencyBonus);
+        put("passiveWisdom", passiveWisdom);
+    }};
+    
 
-    public JTextField acrobatics     = new JTextField();
-    public JTextField animalHandling = new JTextField();
-    public JTextField arcana         = new JTextField();
-    public JTextField athletics      = new JTextField();
-    public JTextField deception      = new JTextField();
-    public JTextField history        = new JTextField();
-    public JTextField insight        = new JTextField();
-    public JTextField intimidation   = new JTextField();
-    public JTextField investigation  = new JTextField();
-    public JTextField medicine       = new JTextField();
-    public JTextField nature         = new JTextField();
-    public JTextField perception     = new JTextField();
-    public JTextField performance    = new JTextField();
-    public JTextField persuasion     = new JTextField();
-    public JTextField sleight        = new JTextField();
-    public JTextField religion       = new JTextField();
-    public JTextField stealth        = new JTextField();
-    public JTextField survival       = new JTextField();
+    private JTextField acrobatics     = new JTextField();
+    private JTextField animalHandling = new JTextField();
+    private JTextField arcana         = new JTextField();
+    private JTextField athletics      = new JTextField();
+    private JTextField deception      = new JTextField();
+    private JTextField history        = new JTextField();
+    private JTextField insight        = new JTextField();
+    private JTextField intimidation   = new JTextField();
+    private JTextField investigation  = new JTextField();
+    private JTextField medicine       = new JTextField();
+    private JTextField nature         = new JTextField();
+    private JTextField perception     = new JTextField();
+    private JTextField performance    = new JTextField();
+    private JTextField persuasion     = new JTextField();
+    private JTextField sleight        = new JTextField();
+    private JTextField religion       = new JTextField();
+    private JTextField stealth        = new JTextField();
+    private JTextField survival       = new JTextField();
+    // skills map - Gabe likes his maps
+    private Map<String, JTextField> skills = new HashMap<String, JTextField>() {{
+        put("acrobatics", acrobatics);
+        put("animalHandling", animalHandling);
+        put("arcana", arcana);
+        put("athletics", athletics);
+        put("deception", deception);
+        put("history ", history);
+        put("insight", insight);
+        put("intimidation", intimidation);
+        put("investigation", investigation);
+        put("medicine", medicine);
+        put("nature", nature);
+        put("perception", perception);
+        put("performance", performance);
+        put("persuasion", persuasion);
+        put("sleight", sleight);
+        put("religion", religion);
+        put("stealth", stealth);
+        put("survival", survival);
+    }};
 
-    public JCheckBox acrobaticsCB     = new JCheckBox();
-    public JCheckBox animalHandlingCB = new JCheckBox();
-    public JCheckBox arcanaCB         = new JCheckBox();
-    public JCheckBox athleticsCB      = new JCheckBox();
-    public JCheckBox deceptionCB      = new JCheckBox();
-    public JCheckBox historyCB        = new JCheckBox();
-    public JCheckBox insightCB        = new JCheckBox();
-    public JCheckBox intimidationCB   = new JCheckBox();
-    public JCheckBox investigationCB  = new JCheckBox();
-    public JCheckBox medicineCB       = new JCheckBox();
-    public JCheckBox natureCB         = new JCheckBox();
-    public JCheckBox perceptionCB     = new JCheckBox();
-    public JCheckBox performanceCB    = new JCheckBox();
-    public JCheckBox persuasionCB     = new JCheckBox();
-    public JCheckBox sleightCB        = new JCheckBox();
-    public JCheckBox religionCB       = new JCheckBox();
-    public JCheckBox stealthCB        = new JCheckBox();
-    public JCheckBox survivalCB       = new JCheckBox();
+    private JCheckBox acrobaticsCB     = new JCheckBox();
+    private JCheckBox animalHandlingCB = new JCheckBox();
+    private JCheckBox arcanaCB         = new JCheckBox();
+    private JCheckBox athleticsCB      = new JCheckBox();
+    private JCheckBox deceptionCB      = new JCheckBox();
+    private JCheckBox historyCB        = new JCheckBox();
+    private JCheckBox insightCB        = new JCheckBox();
+    private JCheckBox intimidationCB   = new JCheckBox();
+    private JCheckBox investigationCB  = new JCheckBox();
+    private JCheckBox medicineCB       = new JCheckBox();
+    private JCheckBox natureCB         = new JCheckBox();
+    private JCheckBox perceptionCB     = new JCheckBox();
+    private JCheckBox performanceCB    = new JCheckBox();
+    private JCheckBox persuasionCB     = new JCheckBox();
+    private JCheckBox sleightCB        = new JCheckBox();
+    private JCheckBox religionCB       = new JCheckBox();
+    private JCheckBox stealthCB        = new JCheckBox();
+    private JCheckBox survivalCB       = new JCheckBox();
+    // proficiencies map - Gabe likes his maps
+    private Map<String, JCheckBox> skillProficiencies = new HashMap<String, JCheckBox>() {{
+        put("acrobatics", acrobaticsCB);
+        put("animalHandling", animalHandlingCB);
+        put("arcana", arcanaCB);
+        put("athletics", athleticsCB);
+        put("deception", deceptionCB);
+        put("history ", historyCB);
+        put("insight", insightCB);
+        put("intimidation", intimidationCB);
+        put("investigation", investigationCB);
+        put("medicine", medicineCB);
+        put("nature", natureCB);
+        put("perception", perceptionCB);
+        put("performance", performanceCB);
+        put("persuasion", persuasionCB);
+        put("sleight", sleightCB);
+        put("religion", religionCB);
+        put("stealth", stealthCB);
+        put("survival", survivalCB);
+    }};
 
-    public JTextField strengthThrows     = new JTextField();
-    public JTextField dexterityThrows    = new JTextField();
-    public JTextField constitutionThrows    = new JTextField();
-    public JTextField intelligenceThrows = new JTextField();
-    public JTextField wisdomThrows       = new JTextField();
-    public JTextField charismaThrows     = new JTextField();
+    private JTextField strengthThrows     = new JTextField();
+    private JTextField dexterityThrows    = new JTextField();
+    private JTextField constitutionThrows    = new JTextField();
+    private JTextField intelligenceThrows = new JTextField();
+    private JTextField wisdomThrows       = new JTextField();
+    private JTextField charismaThrows     = new JTextField();
+    // saving throws map - Gabe likes his maps
+    private Map<String, JTextField> savingThrows = new HashMap<String, JTextField>() {{
+        put("strength", strengthThrows);
+        put("dexterity", dexterityThrows );
+        put("constitution", constitutionThrows);
+        put("intelligence", intelligenceThrows);
+        put("wisdom", wisdomThrows);
+        put("charisma", charismaThrows);
+    }};
 
-    public JCheckBox strengthThrowsCB     = new JCheckBox();
-    public JCheckBox dexterityThrowsCB    = new JCheckBox();
-    public JCheckBox constitutionThrowsCB = new JCheckBox();
-    public JCheckBox intelligenceThrowsCB = new JCheckBox();
-    public JCheckBox wisdomThrowsCB       = new JCheckBox();
-    public JCheckBox charismaThrowsCB     = new JCheckBox();
+    private JCheckBox strengthThrowsCB     = new JCheckBox();
+    private JCheckBox dexterityThrowsCB    = new JCheckBox();
+    private JCheckBox constitutionThrowsCB = new JCheckBox();
+    private JCheckBox intelligenceThrowsCB = new JCheckBox();
+    private JCheckBox wisdomThrowsCB       = new JCheckBox();
+    private JCheckBox charismaThrowsCB     = new JCheckBox();
+    // saving throws profeciencies - Gabe likes his maps
+    private Map<String, JTextField> savingProficiencies = new HashMap<String, JTextField>() {{
+        put("strength", strengthThrows);
+        put("dexterity", dexterityThrows );
+        put("constitution", constitutionThrows);
+        put("intelligence", intelligenceThrows);
+        put("wisdom", wisdomThrows);
+        put("charisma", charismaThrows);
+    }};
 
     ////////////////////////////////////////////////////////////////////////////////////////////HP STUFF
 
-    public JTextField armor = new JTextField();
-    public JTextField initiative = new JTextField();
-    public JTextField speed = new JTextField();
+    private JTextField armor = new JTextField();
+    private JTextField initiative = new JTextField();
+    private JTextField speed = new JTextField();
+    // base stats map - Gabe likes his maps
+    private Map<String, JTextField> baseStats = new HashMap<String, JTextField>() {{
+        put("armor", armor);
+        put("initiative", initiative );
+        put("speed", speed);
+    }};
 
-    public JTextField maxHP = new JTextField();
-    public JTextField currentHP = new JTextField();
-    public JTextField temporaryHP = new JTextField();
+    private JTextField maxHP = new JTextField();
+    private JTextField currentHP = new JTextField();
+    private JTextField temporaryHP = new JTextField();
 
-    public JTextField totalDice = new JTextField();
-    public JTextField hitDice = new JTextField();
+    private JTextField totalDice = new JTextField();
+    private JTextField hitDice = new JTextField();
+    // HP stats map - Gabe likes his maps
+    private Map<String, JTextField> hpStats = new HashMap<String, JTextField>() {{
+        put("maxHP", maxHP);
+        put("currentHP", currentHP );
+        put("temporaryHP", temporaryHP);
+        put("totalHitDice", totalDice);
+        put("hitDice", hitDice);
+    }};
 
-    public JRadioButton success1 = new JRadioButton();
-    public JRadioButton success2 = new JRadioButton();
-    public JRadioButton success3 = new JRadioButton();
+    
+    
+    private JRadioButton success1 = new JRadioButton();
+    private JRadioButton success2 = new JRadioButton();
+    private JRadioButton success3 = new JRadioButton();
 
-    public JRadioButton failure1 = new JRadioButton();
-    public JRadioButton failure2 = new JRadioButton();
-    public JRadioButton failure3 = new JRadioButton();
+    private JRadioButton failure1 = new JRadioButton();
+    private JRadioButton failure2 = new JRadioButton();
+    private JRadioButton failure3 = new JRadioButton();
+    // Death saves map - Gabe likes his maps
+    private Map<String, JRadioButton[]> deathSaves = new HashMap<String, JRadioButton[]>() {{
+        put("successes", new JRadioButton[] {success1, success2, success3});
+        put("failures", new JRadioButton[] {failure1, failure2, failure3});
+    }};
 
-    public JTable attackTable = new JTable();
 
-    public JTextArea featuresText = new JTextArea();
+    // private JTable attackTable = new JTable();
+
+    private JTextArea featuresText = new JTextArea();
 
     ////////////////////////////////////////////////////////////////////////////////////////////SPELL PAGE
+    private JTextArea personalityTraits = new JTextArea();
+    private JTextArea ideals = new JTextArea();
+    private JTextArea bonds = new JTextArea();
+    private JTextArea flaws = new JTextArea();
 
-    public JTextArea personalityTraits = new JTextArea();
-    public JTextArea ideals = new JTextArea();
-    public JTextArea bonds = new JTextArea();
-    public JTextArea flaws = new JTextArea();
-
-    public JTextArea otherProficiencies = new JTextArea();
-    public JTextArea additionalFeatures = new JTextArea();
+    private JTextArea otherProficiencies = new JTextArea();
+    private JTextArea additionalFeatures = new JTextArea();
 
 
     public CharacterSheetTab(Role role) {
@@ -152,29 +283,29 @@ public class CharacterSheetTab extends JPanel {
 
         ////////////////////////////////////////////////////////////////////////////////////////////SPELL STATS
 
-        JPanel spellStats = new JPanel(new GridLayout(2, 4));
-        spellStats.setBorder(BorderFactory.createTitledBorder("Spell Stats"));
+        JPanel spellStatsPanel = new JPanel(new GridLayout(2, 4));
+        spellStatsPanel.setBorder(BorderFactory.createTitledBorder("Spell Stats"));
 
-        spellStats.add(spellCastingAbility);
+        spellStatsPanel.add(spellCastingAbility);
         spellCastingAbility.setHorizontalAlignment(JTextField.CENTER);
         spellCastingAbility.setFont(new Font("Arial", Font.PLAIN, 24));
 
-        spellStats.add(spellSaveDC);
+        spellStatsPanel.add(spellSaveDC);
         spellSaveDC.setHorizontalAlignment(JTextField.CENTER);
         spellSaveDC.setFont(new Font("Arial", Font.PLAIN, 24));
 
-        spellStats.add(spellAttackBonus);
+        spellStatsPanel.add(spellAttackBonus);
         spellAttackBonus.setHorizontalAlignment(JTextField.CENTER);
         spellAttackBonus.setFont(new Font("Arial", Font.PLAIN, 24));
 
-        spellStats.add(sorcererPoints);
+        spellStatsPanel.add(sorcererPoints);
         sorcererPoints.setHorizontalAlignment(JTextField.CENTER);
         sorcererPoints.setFont(new Font("Arial", Font.PLAIN, 24));
 
-        spellStats.add(new JLabel("Casting Ability"));
-        spellStats.add(new JLabel("Save DC"));
-        spellStats.add(new JLabel("Attack Bonus"));
-        spellStats.add(new JLabel("Sorcerer Points"));
+        spellStatsPanel.add(new JLabel("Casting Ability"));
+        spellStatsPanel.add(new JLabel("Save DC"));
+        spellStatsPanel.add(new JLabel("Attack Bonus"));
+        spellStatsPanel.add(new JLabel("Sorcerer Points"));
 
         ////////////////////////////////////////////////////////////////////////////////////////////TOP PANEL
 
@@ -184,7 +315,7 @@ public class CharacterSheetTab extends JPanel {
 
         JPanel topPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         topPanel.add(characterInfoPanel);
-        topPanel.add(spellStats);
+        topPanel.add(spellStatsPanel);
         topPanel.add(notes);
         add(topPanel, BorderLayout.NORTH);
 
@@ -530,10 +661,13 @@ public class CharacterSheetTab extends JPanel {
         attackPanel.add(new JLabel("ATK BONUS"));
         attackPanel.add(new JLabel("DAMAGE/TYPE"));
 
-        for (int i = 0; i < (8); i++){
-           attackPanel.add(new JTextField());
-           attackPanel.add(new JTextField());
-           attackPanel.add(new JTextField());
+        JTextField[][] attacks = new JTextField[8][3]; // 8 rows, 3 columns
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 3; j++) {
+                attacks[i][j] = new JTextField();
+                attackPanel.add(attacks[i][j]);
+            }
         }
 
         /////////////////////////////////////////////////////////////////////////////////////MIDDLE PANEL BUILDER
@@ -954,7 +1088,79 @@ public class CharacterSheetTab extends JPanel {
             mainSpellsPanel.setVisible(true);
         });
 
+        JButton saveButton = new JButton("SAVE");
+        saveButton.addActionListener(e -> {
+            
+            // Converting stats to proper map format
+            Map[] statsList = new Map[] {
+                abilities, abilitiesMod, bonuses, skills, skillProficiencies, 
+                spellStats, baseStats, savingThrows, savingProficiencies, hpStats, deathSaves
+            };
+            String[] statsKeys = {
+                "abilities","abilitiesMod","bonuses","skills","skillProficiencies",
+                "spellStats","baseStats","savingThrows","savingProficiencies","hpStats","deathSaves"
+            };
+
+            Map<String, Object> statsMap = new HashMap<>();
+            for(int i = 0; i < statsList.length; i++) {
+                Map<String, Object> stat = new HashMap<>();
+   
+                for(Object obj : statsList[i].entrySet()) {
+                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>) obj;
+                
+                    if(entry.getValue() instanceof JTextField) {
+                        stat.put((String)entry.getKey(), ((JTextField)entry.getValue()).getText());
+                    } 
+                    else if(entry.getValue() instanceof JCheckBox) {
+                        stat.put((String)entry.getKey(), ((JCheckBox)entry.getValue()).isSelected());
+                    }
+                    else if(entry.getValue() instanceof JRadioButton[]){
+                        List<Boolean> buttons = new ArrayList<Boolean>();
+                        for(JRadioButton button : (JRadioButton[])entry.getValue()){
+                            buttons.add(button.isSelected());
+                        }
+                        stat.put((String)entry.getKey(), buttons);
+                    }
+                }
+                statsMap.put(statsKeys[i], stat);
+            }
+            
+            // converting characterInfo to proper map format
+            Map<String, String> infoMap = new HashMap<String, String>() {{
+                for(Map.Entry<String, JTextField> charInfo : characterInfo.entrySet()) {
+                    put(charInfo.getKey(), charInfo.getValue().getText());
+                }
+            }};
+
+            //converting description to map format
+            JTextArea[] descList = new JTextArea[] {
+                featuresText, personalityTraits, ideals, bonds, flaws, additionalFeatures, otherProficiencies
+            };
+            String[] descKeys = new String[] {"features","personalityTraits","ideals","bonds","flaws","additionalFeatures","otherProficiencies"};
+            Map<String,String> descriptionMap = new HashMap<>() {{
+                for(int i = 0; i < descList.length; i++){
+                    put(descKeys[i], (String) descList[i].getText());
+                }
+            }};
+
+            // convert the attack table to an array
+            int rows = attacks.length;
+            int columns = attacks[0].length;
+            String[][] attackArray = new String[rows][columns];
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < columns; col++) {
+                    attackArray[row][col] = attacks[row][col].getText();
+                }
+            }
+            System.out.println(attackArray);
+            characterSheet.save(statsMap, infoMap, descriptionMap, attackArray);
+            
+
+        });
+
+
         JPanel bottomPanel = new JPanel(new FlowLayout());
+        bottomPanel.add(saveButton);
         bottomPanel.add(mainButton);
         bottomPanel.add(spellButton);
 
