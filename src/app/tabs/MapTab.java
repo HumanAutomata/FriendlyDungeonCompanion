@@ -153,6 +153,16 @@ public class MapTab extends JPanel {
     POIHandler.save(rootPOI, WORLD_PATH);
   }
 
+  private JScrollPane findScrollPane(Component c) {
+    while (c != null) {
+        if (c instanceof JScrollPane) {
+            return (JScrollPane) c;
+        }
+        c = c.getParent();
+    }
+    return null;
+  }
+
   // Get and draw all POIs for currently viewed POI
   private void drawPOIs() {
     if (poiPanel == null) 
@@ -196,18 +206,20 @@ public class MapTab extends JPanel {
               if (SwingUtilities.isLeftMouseButton(e)) {
                 if (mapEditMode != null && mapEditMode.isSelected()) {
                   // if in edit mode, create POI
+                  lockViewport(findScrollPane(poiPanel));
                   editingPOI = child;
                   pendingButton = b;
                   titleField.setText(child.title != null ? child.title : "");
                   descField.setText(child.description != null ? child.description : "");
                   pathField.setText(child.imagePath != null ? child.imagePath : "");
                   if (!layerPane.isAncestorOf(popupPanel)) {
-                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath), findScrollPane(poiPanel));
                     layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
                 } else {
                   // open this POI (navigate into it)
+                  unlockViewport(findScrollPane(poiPanel));
                   navigationStack.push(currentPOI);
                   backButton.setEnabled(true);
                   backButton.setVisible(true);
@@ -239,21 +251,32 @@ public class MapTab extends JPanel {
   }
 
   // returns a popup panel which is located in the middle of the POI image
-  private JPanel setPopupSize(JPanel panel, BufferedImage image) {
+  private JPanel setPopupSize(JPanel panel, BufferedImage image, JScrollPane scrollPane) {
     int imageWidth = PLACEHOLDER_WIDTH;
-    int imageHeight = PLACEHOLDER_HEIGHT;
-    // if dimensions of image are too small, set to default size values
-    if (image != null) {
-      imageWidth = (image.getWidth() >= PLACEHOLDER_WIDTH) ? image.getWidth() : PLACEHOLDER_WIDTH;
-      imageHeight = (image.getHeight() >= PLACEHOLDER_HEIGHT) ? image.getHeight() : PLACEHOLDER_HEIGHT;
+        int imageHeight = PLACEHOLDER_HEIGHT;
+
+        // If dimensions of image are too small, set to default size values
+        if (image != null) {
+            imageWidth = Math.max(image.getWidth(), PLACEHOLDER_WIDTH);
+            imageHeight = Math.max(image.getHeight(), PLACEHOLDER_HEIGHT);
+        }
+
+        // Get the visible area of the scroll pane
+        JViewport viewport = scrollPane.getViewport();
+        Dimension viewportSize = viewport.getSize();
+        Point viewPosition = viewport.getViewPosition();
+
+        // Calculate the position for the popup in the center of the viewport
+        int popupX = (viewportSize.width - POPUP_WIDTH) / 2 + viewPosition.x;
+        int popupY = (viewportSize.height - POPUP_HEIGHT) / 2 + viewPosition.y;
+
+        // Set the bounds for the popup panel
+        panel.setBounds(popupX, popupY, POPUP_WIDTH, POPUP_HEIGHT);
+        panel.setBackground(new Color(255, 255, 255, 240)); // Semi-transparent background
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Padding
+
+        return panel;
     }
-    int offsetWidth = (imageWidth - POPUP_WIDTH) / 2;
-    int offsetHeight = (imageHeight - POPUP_HEIGHT) / 2;
-    panel.setBounds(offsetWidth, offsetHeight, POPUP_WIDTH, POPUP_HEIGHT);
-    panel.setBackground(new Color(255, 255, 255, 240));
-    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-    return panel;
-  }
 
   // changes view to currently selected POI and draws its children POI
   private void openPOI(POI poi) {
@@ -303,6 +326,20 @@ public class MapTab extends JPanel {
     }
     currentPOI = rootPOI;
   }
+  
+  // locks the viewport to the current orientation
+  private void lockViewport(JScrollPane scrollPane) {
+    scrollPane.setWheelScrollingEnabled(false);
+    scrollPane.getHorizontalScrollBar().setEnabled(false);
+    scrollPane.getVerticalScrollBar().setEnabled(false);
+  }
+
+  // unlocks the viewport to allow scrolling
+  private void unlockViewport(JScrollPane scrollPane) {
+    scrollPane.setWheelScrollingEnabled(true);
+    scrollPane.getHorizontalScrollBar().setEnabled(true);
+    scrollPane.getVerticalScrollBar().setEnabled(true);
+  }
 
   public MapTab(Role role) {
     setLayout(new BorderLayout());
@@ -323,9 +360,20 @@ public class MapTab extends JPanel {
       getImageDimensions(loadMapImage(currentPOI.imagePath)).height
     );
 
+    // assemble layered pane (whole image)
+    layerPane = new JLayeredPane();
+    layerPane.setPreferredSize(getImageDimensions(loadMapImage(currentPOI.imagePath)));
+    layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
+    layerPane.add(poiPanel, JLayeredPane.PALETTE_LAYER);
+
+    // make the layer pane scrollable (resizable) and add it to the tab
+    JScrollPane scroll = new JScrollPane(layerPane);
+    scroll.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+    scroll.setPreferredSize(new Dimension(1000, 1000));
+
 /////////////////////////////////////// Popup Panel ///////////////////////////////////////////////////////////////
     popupPanel = new JPanel(new BorderLayout());
-    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath), scroll);
 
     // title of POI
     JLabel popupTitle = new JLabel("Point of Interest");
@@ -398,6 +446,7 @@ public class MapTab extends JPanel {
               openPOI(currentPOI);
             }
             layerPane.remove(popupPanel);
+            unlockViewport(scroll);
             drawPOIs();
             layerPane.repaint();
           }
@@ -416,6 +465,7 @@ public class MapTab extends JPanel {
             }
             editingPOI = null;
             layerPane.remove(popupPanel);
+            unlockViewport(scroll);
             layerPane.repaint();
           }
         });
@@ -426,16 +476,7 @@ public class MapTab extends JPanel {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // assemble layered pane (whole image)
-    layerPane = new JLayeredPane();
-    layerPane.setPreferredSize(getImageDimensions(loadMapImage(currentPOI.imagePath)));
-    layerPane.add(imagePanel, JLayeredPane.DEFAULT_LAYER);
-    layerPane.add(poiPanel, JLayeredPane.PALETTE_LAYER);
-
-    // make the layer pane scrollable (resizable) and add it to the tab
-    JScrollPane scroll = new JScrollPane(layerPane);
-    scroll.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
-    scroll.setPreferredSize(new Dimension(1000, 1000));
+  
 
     // POI info panel displayed on right-hand side of screen
     JPanel infoPanel = new JPanel();
@@ -520,11 +561,12 @@ public class MapTab extends JPanel {
     
     editPOIButton.addActionListener(
       e -> {
+        lockViewport(scroll);
         titleField.setText(currentPOI.title != null ? currentPOI.title : "");
         descField.setText(currentPOI.description != null ? currentPOI.description : "");
         pathField.setText(currentPOI.imagePath != null ? currentPOI.imagePath : "");
         editCurrentPOI = true; // set that we are editing a POI
-        popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+        popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath), scroll);
         layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
         drawPOIs(); // redraw POIs once done
       }
@@ -592,7 +634,7 @@ public class MapTab extends JPanel {
                 poiY = overlayPoint.y;
 
                 if (isInsideImage(poiX, poiY, loadMapImage(currentPOI.imagePath), poiPanel)) {
-
+                  lockViewport(scroll);
                   // create a placeholder button at that location
                   ImageIcon poiIcon = new ImageIcon("./assets/poi.png");
                   Image scaled = poiIcon.getImage().getScaledInstance(28, 40, Image.SCALE_SMOOTH);
@@ -618,8 +660,7 @@ public class MapTab extends JPanel {
 
                   // if the popup panel doesn't exist yet, add it
                   if (!layerPane.isAncestorOf(popupPanel)) {
-
-                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath));
+                    popupPanel = setPopupSize(popupPanel, loadMapImage(currentPOI.imagePath), scroll);
                     layerPane.add(popupPanel, JLayeredPane.POPUP_LAYER);
                   }
                   layerPane.repaint();
