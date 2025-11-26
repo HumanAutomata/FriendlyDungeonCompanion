@@ -4,7 +4,7 @@ import javax.swing.*;
 import app.Role;
 
 import java.awt.*;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public class InventoryTab extends JPanel {
@@ -24,7 +24,7 @@ public class InventoryTab extends JPanel {
         };
 
 
-        Map<String, JTextField[][]> inventory = new LinkedHashMap<>();
+        Map<String, JTextField[][]> inventory = new HashMap<>();
 
         JTextField[][] funds = new JTextField[5][1];
         inventory.put("FUNDS", funds);
@@ -41,6 +41,7 @@ public class InventoryTab extends JPanel {
         saveButton.addActionListener(e -> {
 
             // SAVE BUTTON CODE
+           
 
         });
         savePanel.add(saveButton, BorderLayout.NORTH);

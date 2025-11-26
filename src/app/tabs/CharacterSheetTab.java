@@ -1013,9 +1013,9 @@ public class CharacterSheetTab extends JPanel {
             Map.Entry<?, ?> entry = (Map.Entry<?, ?>) obj;
             String key = (String) entry.getKey();
             Object value = entry.getValue();
-            
+
             if(!swingMap.containsKey(key)) continue;
-            
+
             Object swingComponent = swingMap.get(key);
             
             if(value instanceof Map && swingComponent instanceof Map){
@@ -1033,26 +1033,57 @@ public class CharacterSheetTab extends JPanel {
                     }
                 }
             }
+            else if(swingComponent instanceof JTextField[] && value instanceof String[]){
+                JTextField[] fields = (JTextField[])swingComponent;
+                String[] values = (String[])value;
+                for(int i = 0; i < Math.min(fields.length, values.length); i++){
+                    if(fields[i] != null) {
+                        fields[i].setText(values[i]);
+                    }
+                }
+            }
             else if(swingComponent instanceof JCheckBox && value instanceof Boolean) {
                 ((JCheckBox)swingComponent).setSelected((Boolean)value);
             }
-            else if(swingComponent instanceof JCheckBox[] && value instanceof List){
+            // else if(swingComponent instanceof JCheckBox[] && value instanceof List){
+            //     JCheckBox[] boxes = (JCheckBox[])swingComponent;
+            //     List<?> values = (List<?>)value;
+            //     for(int i = 0; i < Math.min(boxes.length, values.size()); i++){
+            //         if(boxes[i] != null && values.get(i) instanceof Boolean) {
+            //             boxes[i].setSelected((Boolean)values.get(i));
+            //         }
+            //     }
+            // }
+            else if(swingComponent instanceof JCheckBox[] && value instanceof boolean[]){
                 JCheckBox[] boxes = (JCheckBox[])swingComponent;
-                List<?> values = (List<?>)value;
-                for(int i = 0; i < Math.min(boxes.length, values.size()); i++){
-                    if(boxes[i] != null && values.get(i) instanceof Boolean) {
-                        boxes[i].setSelected((Boolean)values.get(i));
+                boolean[] values = (boolean[])value;
+                for(int i = 0; i < Math.min(boxes.length, values.length); i++){
+                    if(boxes[i] != null) {
+                        boxes[i].setSelected(values[i]);
                     }
                 }
             }
-            else if(swingComponent instanceof JRadioButton[] && value instanceof List){
+            // else if(swingComponent instanceof JRadioButton[] && value instanceof List){
+            //     JRadioButton[] buttons = (JRadioButton[])swingComponent;
+            //     List<?> values = (List<?>)value;
+            //     for(int i = 0; i < Math.min(buttons.length, values.size()); i++){
+            //         if(buttons[i] != null && values.get(i) instanceof Boolean) {
+            //             buttons[i].setSelected((Boolean)values.get(i));
+            //         }
+            //     }
+            // }
+            else if( swingComponent instanceof JRadioButton[] && value instanceof boolean[]){
+                System.out.println("FOUND IT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 JRadioButton[] buttons = (JRadioButton[])swingComponent;
-                List<?> values = (List<?>)value;
-                for(int i = 0; i < Math.min(buttons.length, values.size()); i++){
-                    if(buttons[i] != null && values.get(i) instanceof Boolean) {
-                        buttons[i].setSelected((Boolean)values.get(i));
+                boolean[] values = (boolean[])value;
+                for(int i = 0; i < Math.min(buttons.length, values.length); i++){
+                    if(buttons[i] != null) {
+                        buttons[i].setSelected(values[i]);
                     }
                 }
+            }
+            else {
+                System.out.println("PROBLEM:      "+key);
             }
         }
         return swingMap;
@@ -1072,6 +1103,9 @@ public class CharacterSheetTab extends JPanel {
         Map<String,Object> statsIn = characterSheet.getStats();
         stats = recursiveFromStringMap(stats, statsIn);
 
+
+
+
         String[][] attacksIn = (String[][]) characterSheet.getAttacks();
         for(int i = 0; i < attacks.length; i++){
             for(int j = 0; j < attacks[0].length; j++) {
@@ -1079,7 +1113,7 @@ public class CharacterSheetTab extends JPanel {
             }
         }
 
-        Map<String,Object> spellsIn = characterSheet.getStats();
-        recursiveFromStringMap(spellLevels, spellsIn);
+        Map<String,Object> spellsIn = characterSheet.getSpells();
+        spellLevels = recursiveFromStringMap(spellLevels, spellsIn);
     }
 }
