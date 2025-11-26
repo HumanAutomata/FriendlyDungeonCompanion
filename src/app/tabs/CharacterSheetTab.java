@@ -16,6 +16,8 @@ public class CharacterSheetTab extends JPanel {
     
     public JScrollPane scrollPane = new JScrollPane();
 
+    
+
     ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
     private JTextField name = new JTextField();
     private JTextField race = new JTextField();
@@ -201,7 +203,7 @@ public class CharacterSheetTab extends JPanel {
         put("charisma", charismaThrows);
     }};
 
-    ////////////////////////////////////////////////////////////////////////////////////////////HP STUFF
+    ////////////////////////////////////////////////////////////////////////////HP STUFF
 
     private JTextField armor = new JTextField();
     private JTextField initiative = new JTextField();
@@ -257,8 +259,56 @@ public class CharacterSheetTab extends JPanel {
     private JTextArea otherProficiencies = new JTextArea();
     private JTextArea additionalFeatures = new JTextArea();
 
+    
+
+    //////////////////////////////////////////////////////////////////////////////ATTACKS
+    private JTextField[][] attacks = new JTextField[8][3]; // 8 rows, 3 columns
+
+
+    ////////////////////////////////////////////////////////////////////////////////////SPELLS
+    int[] spellSlotCounts = {9, 9, 9, 10, 10, 10, 7, 7, 7, 7}; // slots per level
+
+    private Map<String,Object> spellLevels = new HashMap<>(){{
+        for(int i = 0; i < spellSlotCounts.length; i++){
+            int j = i;
+            put("lvl-"+j, new HashMap<>(){{
+                put("fields", new JTextField[spellSlotCounts[j]]);
+                if(j!=0) put("boxes", new JCheckBox[spellSlotCounts[j]]);
+                if(j!=0) put("total", new JTextField());
+                if(j!=0) put("expended", new JTextField());
+            }});
+        }
+    }};
+    
+    
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //converting description to map format
+    private JTextArea[] descList = new JTextArea[] {
+        featuresText, personalityTraits, ideals, bonds, flaws, additionalFeatures, otherProficiencies
+    };
+    private String[] descKeys = new String[] {"features","personalityTraits","ideals","bonds","flaws","additionalFeatures","otherProficiencies"};
+    private Map<String,JTextArea> description = new HashMap<>() {{
+        for(int i = 0; i < descKeys.length; i++) {
+            put(descKeys[i], descList[i]);
+        }
+    }};
+    private Map[] statsList = new Map[] {
+        abilities, abilitiesMod, bonuses, skills, skillProficiencies, 
+        spellStats, baseStats, savingThrows, savingProficiencies, hpStats, deathSaves
+    };
+    private String[] statsKeys = {
+        "abilities","abilitiesMod","bonuses","skills","skillProficiencies",
+        "spellStats","baseStats","savingThrows","savingProficiencies","hpStats","deathSaves"
+    };
+    private Map<String, Object> stats = new HashMap<>() {{
+        for(int i = 0; i <statsKeys.length; i++){
+            put(statsKeys[i], statsList[i]);
+        }
+    }};
 
     public CharacterSheetTab(Role role) {
+
+
         setLayout(new BorderLayout());
 
         ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
@@ -661,8 +711,6 @@ public class CharacterSheetTab extends JPanel {
         attackPanel.add(new JLabel("ATK BONUS"));
         attackPanel.add(new JLabel("DAMAGE/TYPE"));
 
-        JTextField[][] attacks = new JTextField[8][3]; // 8 rows, 3 columns
-
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 3; j++) {
                 attacks[i][j] = new JTextField();
@@ -710,301 +758,50 @@ public class CharacterSheetTab extends JPanel {
         ////////////////////////////////////////////////////////////////////////////////////SPELL PAGE
         ////////////////////////////////////////////////////////////////////////////////////SPELL PAGE
 
-        /////////////////////////////////////////////////////////////////////////////////////////////LEVEL 0
-
-        //<editor-fold desc="//////////////////////////////////////////////////////////SPELL LEVELS">
-        JPanel levelZeroPanel = new JPanel(new BorderLayout(5,0));
-        JLabel levelZero = new JLabel("level 0");
-        //levelZero.setFont(new Font("Arial", Font.PLAIN, 24));
-        levelZero.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        // Level 0 - Cantrips (special case)
+        JPanel levelZeroPanel = new JPanel(new BorderLayout(5, 0));
         JLabel cantrips = new JLabel("CANTRIPS", SwingConstants.CENTER);
-        //cantrips.setFont(new Font("Arial", Font.PLAIN, 18));
         cantrips.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        //levelZeroPanel.add(levelZero, BorderLayout.WEST);
         levelZeroPanel.add(cantrips, BorderLayout.CENTER);
 
         JPanel cantripsPanel = new JPanel(new GridLayout(10, 1, 0, 5));
         cantripsPanel.add(levelZeroPanel);
-        for (int i = 0; i < 9; i++){
+        for (int i = 0; i < ((JTextField[])((Map)spellLevels.get("lvl-0")).get("fields")).length; i++) {
+            ((JTextField[])((Map)spellLevels.get("lvl-0")).get("fields"))[i] = new JTextField();
             cantripsPanel.add(new JTextField());
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////LEVEL 1
-
-        JPanel l1Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l1 = new JLabel("Level 1", SwingConstants.CENTER);
-        JTextField l1Total = new JTextField();
-        JTextField l1Expended = new JTextField();
-
-        //l1.setFont(new Font("Arial", Font.PLAIN, 24));
-        l1.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l1Panel.add(l1);
-        l1Panel.add(l1Total);
-        l1Panel.add(l1Expended);
-
-        JPanel l1checkBoxes = new JPanel(new GridLayout(9, 1, 0, 5));
-        JPanel l1textFields = new JPanel(new GridLayout(9, 1, 0, 5));
-
-        for (int i = 0; i < 9; i++){
-
-            l1checkBoxes.add(new JCheckBox());
-            l1textFields.add(new JTextField());
-
-        }
-
-        JPanel l1builderPanel = new JPanel(new BorderLayout());
-        l1builderPanel.add(l1Panel, BorderLayout.NORTH);
-        l1builderPanel.add(l1checkBoxes, BorderLayout.WEST);
-        l1builderPanel.add(l1textFields, BorderLayout.CENTER);
-
-        ////////////////////////////////////////////////////////////////////////////////////////////LEVEL 2
-
-        JPanel l2Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l2 = new JLabel("Level 2", SwingConstants.CENTER);
-        JTextField l2Total = new JTextField();
-        JTextField l2Expended = new JTextField(20);
-
-        //l2.setFont(new Font("Arial", Font.PLAIN, 24));
-        l2.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l2Panel.add(l2);
-        l2Panel.add(l2Total);
-        l2Panel.add(l2Expended);
-
-        JPanel l2checkBoxes = new JPanel(new GridLayout(9, 1, 0, 5));
-        JPanel l2textFields = new JPanel(new GridLayout(9, 1, 0, 5));
-
-        for (int i = 0; i < 9; i++){
-
-            l2checkBoxes.add(new JCheckBox());
-            l2textFields.add(new JTextField());
-
-        }
-
-        JPanel l2builderPanel = new JPanel(new BorderLayout());
-        l2builderPanel.add(l2Panel, BorderLayout.NORTH);
-        l2builderPanel.add(l2checkBoxes, BorderLayout.WEST);
-        l2builderPanel.add(l2textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 3
-
-        JPanel l3Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l3 = new JLabel("Level 3", SwingConstants.CENTER);
-        JTextField l3Total = new JTextField();
-        JTextField l3Expended = new JTextField(20);
-
-        //l3.setFont(new Font("Arial", Font.PLAIN, 24));
-        l3.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l3Panel.add(l3);
-        l3Panel.add(l3Total);
-        l3Panel.add(l3Expended);
-
-        JPanel l3checkBoxes = new JPanel(new GridLayout(10, 1, 0, 5));
-        JPanel l3textFields = new JPanel(new GridLayout(10, 1, 0, 5));
-
-        for (int i = 0; i < 10; i++){
-
-            l3checkBoxes.add(new JCheckBox());
-            l3textFields.add(new JTextField());
-
-        }
-
-        JPanel l3builderPanel = new JPanel(new BorderLayout());
-        l3builderPanel.add(l3Panel, BorderLayout.NORTH);
-        l3builderPanel.add(l3checkBoxes, BorderLayout.WEST);
-        l3builderPanel.add(l3textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 4
-
-        JPanel l4Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l4 = new JLabel("Level 4", SwingConstants.CENTER);
-        JTextField l4Total = new JTextField();
-        JTextField l4Expended = new JTextField(20);
-
-        //l4.setFont(new Font("Arial", Font.PLAIN, 24));
-        l4.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l4Panel.add(l4);
-        l4Panel.add(l4Total);
-        l4Panel.add(l4Expended);
-
-        JPanel l4checkBoxes = new JPanel(new GridLayout(10, 1, 0, 5));
-        JPanel l4textFields = new JPanel(new GridLayout(10, 1, 0, 5));
-
-        for (int i = 0; i < 10; i++){
-
-            l4checkBoxes.add(new JCheckBox());
-            l4textFields.add(new JTextField());
-
-        }
-
-        JPanel l4builderPanel = new JPanel(new BorderLayout());
-        l4builderPanel.add(l4Panel, BorderLayout.NORTH);
-        l4builderPanel.add(l4checkBoxes, BorderLayout.WEST);
-        l4builderPanel.add(l4textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 5
+        // Levels 1-9 using a loop and helper function
         
-        JPanel l5Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l5 = new JLabel("Level 5", SwingConstants.CENTER);
-        JTextField l5Total = new JTextField();
-        JTextField l5Expended = new JTextField(20);
+        JPanel[] levelBuilderPanels = new JPanel[9];
 
-        //l5.setFont(new Font("Arial", Font.PLAIN, 24));
-        l5.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l5Panel.add(l5);
-        l5Panel.add(l5Total);
-        l5Panel.add(l5Expended);
-
-        JPanel l5checkBoxes = new JPanel(new GridLayout(10, 1, 0, 5));
-        JPanel l5textFields = new JPanel(new GridLayout(10, 1, 0, 5));
-
-        for (int i = 0; i < 10; i++){
-
-            l5checkBoxes.add(new JCheckBox());
-            l5textFields.add(new JTextField());
-
+        for (int level = 1; level <= 9; level++) {
+            levelBuilderPanels[level - 1] = createSpellLevelPanel(level, (Map<String, Object>)spellLevels.get("lvl-"+level));
         }
 
-        JPanel l5builderPanel = new JPanel(new BorderLayout());
-        l5builderPanel.add(l5Panel, BorderLayout.NORTH);
-        l5builderPanel.add(l5checkBoxes, BorderLayout.WEST);
-        l5builderPanel.add(l5textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 6
-        
-        JPanel l6Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l6 = new JLabel("Level 6", SwingConstants.CENTER);
-        JTextField l6Total = new JTextField();
-        JTextField l6Expended = new JTextField(20);
-
-        //l6.setFont(new Font("Arial", Font.PLAIN, 24));
-        l6.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l6Panel.add(l6);
-        l6Panel.add(l6Total);
-        l6Panel.add(l6Expended);
-
-        JPanel l6checkBoxes = new JPanel(new GridLayout(7, 1, 0, 5));
-        JPanel l6textFields = new JPanel(new GridLayout(7, 1, 0, 5));
-
-        for (int i = 0; i < 7; i++){
-
-            l6checkBoxes.add(new JCheckBox());
-            l6textFields.add(new JTextField());
-
-        }
-
-        JPanel l6builderPanel = new JPanel(new BorderLayout());
-        l6builderPanel.add(l6Panel, BorderLayout.NORTH);
-        l6builderPanel.add(l6checkBoxes, BorderLayout.WEST);
-        l6builderPanel.add(l6textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 7
-        
-        JPanel l7Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l7 = new JLabel("Level 7", SwingConstants.CENTER);
-        JTextField l7Total = new JTextField();
-        JTextField l7Expended = new JTextField(20);
-
-        //l7.setFont(new Font("Arial", Font.PLAIN, 24));
-        l7.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l7Panel.add(l7);
-        l7Panel.add(l7Total);
-        l7Panel.add(l7Expended);
-
-        JPanel l7checkBoxes = new JPanel(new GridLayout(7, 1, 0, 5));
-        JPanel l7textFields = new JPanel(new GridLayout(7, 1, 0, 5));
-
-        for (int i = 0; i < 7; i++){
-
-            l7checkBoxes.add(new JCheckBox());
-            l7textFields.add(new JTextField());
-
-        }
-
-        JPanel l7builderPanel = new JPanel(new BorderLayout());
-        l7builderPanel.add(l7Panel, BorderLayout.NORTH);
-        l7builderPanel.add(l7checkBoxes, BorderLayout.WEST);
-        l7builderPanel.add(l7textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 8
-        
-        JPanel l8Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l8 = new JLabel("Level 8", SwingConstants.CENTER);
-        JTextField l8Total = new JTextField();
-        JTextField l8Expended = new JTextField(20);
-
-        //l8.setFont(new Font("Arial", Font.PLAIN, 24));
-        l8.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l8Panel.add(l8);
-        l8Panel.add(l8Total);
-        l8Panel.add(l8Expended);
-
-        JPanel l8checkBoxes = new JPanel(new GridLayout(7, 1, 0, 5));
-        JPanel l8textFields = new JPanel(new GridLayout(7, 1, 0, 5));
-
-        for (int i = 0; i < 7; i++){
-
-            l8checkBoxes.add(new JCheckBox());
-            l8textFields.add(new JTextField());
-
-        }
-
-        JPanel l8builderPanel = new JPanel(new BorderLayout());
-        l8builderPanel.add(l8Panel, BorderLayout.NORTH);
-        l8builderPanel.add(l8checkBoxes, BorderLayout.WEST);
-        l8builderPanel.add(l8textFields, BorderLayout.CENTER);
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEVEL 9
-        
-        JPanel l9Panel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JLabel l9 = new JLabel("Level 9", SwingConstants.CENTER);
-        JTextField l9Total = new JTextField();
-        JTextField l9Expended = new JTextField(20);
-
-        //l9.setFont(new Font("Arial", Font.PLAIN, 24));
-        l9.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        l9Panel.add(l9);
-        l9Panel.add(l9Total);
-        l9Panel.add(l9Expended);
-
-        JPanel l9checkBoxes = new JPanel(new GridLayout(7, 1, 0, 5));
-        JPanel l9textFields = new JPanel(new GridLayout(7, 1, 0, 5));
-
-        for (int i = 0; i < 7; i++){
-
-            l9checkBoxes.add(new JCheckBox());
-            l9textFields.add(new JTextField());
-
-        }
-
-        JPanel l9builderPanel = new JPanel(new BorderLayout());
-        l9builderPanel.add(l9Panel, BorderLayout.NORTH);
-        l9builderPanel.add(l9checkBoxes, BorderLayout.WEST);
-        l9builderPanel.add(l9textFields, BorderLayout.CENTER);
-        //</editor-fold>
-
-        //////////////////////////////////////////////////////////////////////////////////////////////LEFT SPELL PANEL
-
-        JPanel leftSpellsPanel = new  JPanel(new GridLayout(3,1,0,5));
+        // Organize panels into columns
+        JPanel leftSpellsPanel = new JPanel(new GridLayout(3, 1, 0, 5));
         leftSpellsPanel.add(cantripsPanel);
-        leftSpellsPanel.add(l1builderPanel);
-        leftSpellsPanel.add(l2builderPanel);
+        leftSpellsPanel.add(levelBuilderPanels[0]); // Level 1
+        leftSpellsPanel.add(levelBuilderPanels[1]); // Level 2
 
+        JPanel middleSpellsPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+        middleSpellsPanel.add(levelBuilderPanels[2]); // Level 3
+        middleSpellsPanel.add(levelBuilderPanels[3]); // Level 4
+        middleSpellsPanel.add(levelBuilderPanels[4]); // Level 5
 
-        JPanel middleSpellsPanel = new  JPanel(new GridLayout(3,1, 0,5));
-        middleSpellsPanel.add(l3builderPanel);
-        middleSpellsPanel.add(l4builderPanel);
-        middleSpellsPanel.add(l5builderPanel);
+        JPanel rightSpellsPanel = new JPanel(new GridLayout(4, 1, 0, 5));
+        rightSpellsPanel.add(levelBuilderPanels[5]); // Level 6
+        rightSpellsPanel.add(levelBuilderPanels[6]); // Level 7
+        rightSpellsPanel.add(levelBuilderPanels[7]); // Level 8
+        rightSpellsPanel.add(levelBuilderPanels[8]); // Level 9
 
-        JPanel rightSpellsPanel = new  JPanel(new GridLayout(4,1,0,5));
-        rightSpellsPanel.add(l6builderPanel);
-        rightSpellsPanel.add(l7builderPanel);
-        rightSpellsPanel.add(l8builderPanel);
-        rightSpellsPanel.add(l9builderPanel);
-
-        JPanel combinedSpellsPanel = new  JPanel(new GridLayout(1,3,5,5));
+        JPanel combinedSpellsPanel = new JPanel(new GridLayout(1, 3, 5, 5));
         combinedSpellsPanel.add(leftSpellsPanel);
         combinedSpellsPanel.add(middleSpellsPanel);
         combinedSpellsPanel.add(rightSpellsPanel);
+
+        
 
         ////////////////////////////////////////////////////////////////////////////////////RIGHT SPELL PANEL
 
@@ -1087,43 +884,12 @@ public class CharacterSheetTab extends JPanel {
             mainPanel.setVisible(false);
             mainSpellsPanel.setVisible(true);
         });
-
+//---------------------------- SAVE Button ----------------------------------------------------------------------------
         JButton saveButton = new JButton("SAVE");
         saveButton.addActionListener(e -> {
             
             // Converting stats to proper map format
-            Map[] statsList = new Map[] {
-                abilities, abilitiesMod, bonuses, skills, skillProficiencies, 
-                spellStats, baseStats, savingThrows, savingProficiencies, hpStats, deathSaves
-            };
-            String[] statsKeys = {
-                "abilities","abilitiesMod","bonuses","skills","skillProficiencies",
-                "spellStats","baseStats","savingThrows","savingProficiencies","hpStats","deathSaves"
-            };
-
-            Map<String, Object> statsMap = new HashMap<>();
-            for(int i = 0; i < statsList.length; i++) {
-                Map<String, Object> stat = new HashMap<>();
-   
-                for(Object obj : statsList[i].entrySet()) {
-                    Map.Entry<?, ?> entry = (Map.Entry<?, ?>) obj;
-                
-                    if(entry.getValue() instanceof JTextField) {
-                        stat.put((String)entry.getKey(), ((JTextField)entry.getValue()).getText());
-                    } 
-                    else if(entry.getValue() instanceof JCheckBox) {
-                        stat.put((String)entry.getKey(), ((JCheckBox)entry.getValue()).isSelected());
-                    }
-                    else if(entry.getValue() instanceof JRadioButton[]){
-                        List<Boolean> buttons = new ArrayList<Boolean>();
-                        for(JRadioButton button : (JRadioButton[])entry.getValue()){
-                            buttons.add(button.isSelected());
-                        }
-                        stat.put((String)entry.getKey(), buttons);
-                    }
-                }
-                statsMap.put(statsKeys[i], stat);
-            }
+            Map<String, Object> statsMap = recursiveToStringMap(stats);
             
             // converting characterInfo to proper map format
             Map<String, String> infoMap = new HashMap<String, String>() {{
@@ -1132,11 +898,6 @@ public class CharacterSheetTab extends JPanel {
                 }
             }};
 
-            //converting description to map format
-            JTextArea[] descList = new JTextArea[] {
-                featuresText, personalityTraits, ideals, bonds, flaws, additionalFeatures, otherProficiencies
-            };
-            String[] descKeys = new String[] {"features","personalityTraits","ideals","bonds","flaws","additionalFeatures","otherProficiencies"};
             Map<String,String> descriptionMap = new HashMap<>() {{
                 for(int i = 0; i < descList.length; i++){
                     put(descKeys[i], (String) descList[i].getText());
@@ -1152,12 +913,14 @@ public class CharacterSheetTab extends JPanel {
                     attackArray[row][col] = attacks[row][col].getText();
                 }
             }
-            System.out.println(attackArray);
-            characterSheet.save(statsMap, infoMap, descriptionMap, attackArray);
+
+            Map<String, Object> spells = recursiveToStringMap((Map<String, Object>)spellLevels);
             
 
+            // save function
+            characterSheet.save(statsMap, infoMap, descriptionMap, attackArray, spells);
         });
-
+//-----------------------------------------------End of save section---------------------------------------------------
 
         JPanel bottomPanel = new JPanel(new FlowLayout());
         bottomPanel.add(saveButton);
@@ -1166,5 +929,157 @@ public class CharacterSheetTab extends JPanel {
 
         add(bottomPanel, BorderLayout.SOUTH);
 
+//-----------------------------LOAD---------------------------
+        loadData();
+
+    }
+
+    // Helper function to create a spell level panel
+    private JPanel createSpellLevelPanel(int level, Map<String, Object> spellLevel) {
+        // Header panel with level label and text fields
+        JPanel headerPanel = new JPanel(new GridLayout(1, 3, 5, 0));
+        JLabel levelLabel = new JLabel("Level " + level, SwingConstants.CENTER);
+        
+        levelLabel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        headerPanel.add(levelLabel);
+        headerPanel.add((JTextField)spellLevel.get("total"));
+        headerPanel.add((JTextField)spellLevel.get("expended"));
+        // Checkboxes panel
+        JPanel checkBoxesPanel = new JPanel(new GridLayout(((JCheckBox[]) spellLevel.get("boxes")).length, 1, 0, 5));
+        JPanel textFieldsPanel = new JPanel(new GridLayout(((JCheckBox[]) spellLevel.get("boxes")).length, 1, 0, 5));
+        
+
+        for (int i = 0; i < ((JCheckBox[]) spellLevel.get("boxes")).length; i++) {
+            ((JCheckBox[])spellLevel.get("boxes")) [i] = new JCheckBox();
+            checkBoxesPanel.add(((JCheckBox[]) spellLevel.get("boxes")) [i]);
+
+            ((JTextField[])spellLevel.get("fields")) [i] = new JTextField();
+            textFieldsPanel.add(((JTextField[])spellLevel.get("fields"))[i]);
+        }
+
+        // Combine all panels
+        JPanel builderPanel = new JPanel(new BorderLayout());
+        builderPanel.add(headerPanel, BorderLayout.NORTH);
+        builderPanel.add(checkBoxesPanel, BorderLayout.WEST);
+        builderPanel.add(textFieldsPanel, BorderLayout.CENTER);
+        
+        return builderPanel;
+    }
+    private Map<String, Object> recursiveToStringMap(Map<String, Object> swingMap) {
+            
+        Map<String, Object> stringMap = new HashMap<>();
+
+        for(Object obj : swingMap.entrySet()) {
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) obj;
+            if(entry.getValue() instanceof Map){
+                stringMap.put((String) entry.getKey(), recursiveToStringMap((Map<String, Object>) entry.getValue()));
+            }
+
+            else if(entry.getValue() instanceof JTextField) {
+                stringMap.put((String)entry.getKey(), ((JTextField)entry.getValue()).getText());
+            } 
+            else if(entry.getValue() instanceof JTextField[]){
+                List<String> fields = new ArrayList<String>();
+                for(JTextField field : (JTextField[])entry.getValue()){
+                    if(field != null) fields.add((String)field.getText());
+                }
+                stringMap.put((String)entry.getKey(), fields);
+            }
+            else if(entry.getValue() instanceof JCheckBox) {
+                stringMap.put((String)entry.getKey(), ((JCheckBox)entry.getValue()).isSelected());
+            }
+            else if(entry.getValue() instanceof JCheckBox[]){
+                List<Boolean> boxes = new ArrayList<Boolean>();
+                for(JCheckBox box : (JCheckBox[])entry.getValue()){
+                    if(box != null) boxes.add(box.isSelected());
+                }
+                stringMap.put((String)entry.getKey(), boxes);
+                
+            }
+            else if(entry.getValue() instanceof JRadioButton[]){
+                List<Boolean> buttons = new ArrayList<Boolean>();
+                for(JRadioButton button : (JRadioButton[])entry.getValue()){
+                    if(button != null) buttons.add(button.isSelected());
+                }
+                stringMap.put((String)entry.getKey(), buttons);
+            }
+        }
+        return stringMap;
+    }
+    
+    private Map<String, Object> recursiveFromStringMap(Map<String, Object> swingMap, Map<String, Object> stringMap) {
+        
+        for(Object obj : stringMap.entrySet()) {
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) obj;
+            String key = (String) entry.getKey();
+            Object value = entry.getValue();
+            
+            if(!swingMap.containsKey(key)) continue;
+            
+            Object swingComponent = swingMap.get(key);
+            
+            if(value instanceof Map && swingComponent instanceof Map){
+                recursiveFromStringMap((Map<String, Object>) swingComponent, (Map<String, Object>) value);
+            }
+            else if(swingComponent instanceof JTextField && value instanceof String) {
+                ((JTextField)swingComponent).setText((String)value);
+            } 
+            else if(swingComponent instanceof JTextField[] && value instanceof List){
+                JTextField[] fields = (JTextField[])swingComponent;
+                List<?> values = (List<?>)value;
+                for(int i = 0; i < Math.min(fields.length, values.size()); i++){
+                    if(fields[i] != null && values.get(i) instanceof String) {
+                        fields[i].setText((String)values.get(i));
+                    }
+                }
+            }
+            else if(swingComponent instanceof JCheckBox && value instanceof Boolean) {
+                ((JCheckBox)swingComponent).setSelected((Boolean)value);
+            }
+            else if(swingComponent instanceof JCheckBox[] && value instanceof List){
+                JCheckBox[] boxes = (JCheckBox[])swingComponent;
+                List<?> values = (List<?>)value;
+                for(int i = 0; i < Math.min(boxes.length, values.size()); i++){
+                    if(boxes[i] != null && values.get(i) instanceof Boolean) {
+                        boxes[i].setSelected((Boolean)values.get(i));
+                    }
+                }
+            }
+            else if(swingComponent instanceof JRadioButton[] && value instanceof List){
+                JRadioButton[] buttons = (JRadioButton[])swingComponent;
+                List<?> values = (List<?>)value;
+                for(int i = 0; i < Math.min(buttons.length, values.size()); i++){
+                    if(buttons[i] != null && values.get(i) instanceof Boolean) {
+                        buttons[i].setSelected((Boolean)values.get(i));
+                    }
+                }
+            }
+        }
+        return swingMap;
+    }
+
+    private void loadData(){
+        Map<String,String> charInfo = characterSheet.getCharInfo();
+        for(Map.Entry<String, JTextField> info : characterInfo.entrySet()) {
+            info.getValue().setText(charInfo.get(info.getKey()));
+        }
+
+        Map<String,String> desc = characterSheet.getDescription();
+        for(Map.Entry<String, JTextArea> field : description.entrySet()) {
+            field.getValue().setText(desc.get(field.getKey()));
+        }
+
+        Map<String,Object> statsIn = characterSheet.getStats();
+        stats = recursiveFromStringMap(stats, statsIn);
+
+        String[][] attacksIn = (String[][]) characterSheet.getAttacks();
+        for(int i = 0; i < attacks.length; i++){
+            for(int j = 0; j < attacks[0].length; j++) {
+                attacks[i][j].setText(attacksIn[i][j]);
+            }
+        }
+
+        Map<String,Object> spellsIn = characterSheet.getStats();
+        recursiveFromStringMap(spellLevels, spellsIn);
     }
 }
