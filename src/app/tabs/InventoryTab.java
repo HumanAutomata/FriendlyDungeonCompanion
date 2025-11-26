@@ -32,7 +32,7 @@ public class InventoryTab extends JPanel {
 
         /// /////////////////////////////////////////////////////////////////////////////ADD ALL TABLES TO MAP
 
-        Map<String, JTextField[][]> inventory = new LinkedHashMap<>();
+        Map<String, JTextField[][]> inventory = new HashMap<>();
 
         JTextField[][] funds = new JTextField[5][1];
         inventory.put("FUNDS", funds);

@@ -153,62 +153,62 @@ abstract class CharacterSheet{
     }
 
     public static Object convertToNativeTypes(Object obj) {
-    if (obj instanceof LinkedTreeMap) {
-        Map<String, Object> map = (Map<String, Object>) obj;
-        HashMap<String, Object> hashMap = new HashMap<>();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            hashMap.put(entry.getKey(), convertToNativeTypes(entry.getValue()));
-        }
-        return hashMap;
-        
-    } else if (obj instanceof List) {
-        List<Object> list = (List<Object>) obj;
-        
-        if (list.isEmpty()) {
-            return new Object[0];
-        }
-        
-        Object firstElement = list.get(0);
-        
-        // String array
-        if (firstElement instanceof String) {
-            return list.toArray(new String[0]);
-        }
-        
-        // Number array
-        if (firstElement instanceof Number) {
-            return list.toArray(new Double[0]);
-        }
-        
-        // Boolean array
-        if (firstElement instanceof Boolean) {
-            return list.toArray(new Boolean[0]);
-        }
-        
-        // List of lists (2D arrays)
-        if (firstElement instanceof List) {
-            List<Object> innerList = (List<Object>) firstElement;
-            if (!innerList.isEmpty() && innerList.get(0) instanceof String) {
-                String[][] result = new String[list.size()][];
-                for (int i = 0; i < list.size(); i++) {
-                    List<Object> inner = (List<Object>) list.get(i);
-                    result[i] = inner.toArray(new String[0]);
-                }
-                return result;
+        if (obj instanceof LinkedTreeMap) {
+            Map<String, Object> map = (Map<String, Object>) obj;
+            HashMap<String, Object> hashMap = new HashMap<>();
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                hashMap.put(entry.getKey(), convertToNativeTypes(entry.getValue()));
             }
+            return hashMap;
+            
+        } else if (obj instanceof List) {
+            List<Object> list = (List<Object>) obj;
+            
+            if (list.isEmpty()) {
+                return new Object[0];
+            }
+            
+            Object firstElement = list.get(0);
+            
+            // String array
+            if (firstElement instanceof String) {
+                return list.toArray(new String[0]);
+            }
+            
+            // Number array
+            if (firstElement instanceof Number) {
+                return list.toArray(new Double[0]);
+            }
+            
+            // Boolean array
+            if (firstElement instanceof Boolean) {
+                return list.toArray(new Boolean[0]);
+            }
+            
+            // List of lists (2D arrays)
+            if (firstElement instanceof List) {
+                List<Object> innerList = (List<Object>) firstElement;
+                if (!innerList.isEmpty() && innerList.get(0) instanceof String) {
+                    String[][] result = new String[list.size()][];
+                    for (int i = 0; i < list.size(); i++) {
+                        List<Object> inner = (List<Object>) list.get(i);
+                        result[i] = inner.toArray(new String[0]);
+                    }
+                    return result;
+                }
+            }
+            
+            // Mixed or complex content
+            Object[] array = new Object[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                array[i] = convertToNativeTypes(list.get(i));
+            }
+            return array;
+            
+        } else {
+            return obj;
         }
-        
-        // Mixed or complex content
-        Object[] array = new Object[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            array[i] = convertToNativeTypes(list.get(i));
-        }
-        return array;
-        
-    } else {
-        return obj;
     }
-}
 
     public Map<String, String> getCharInfo(){return characterInfo;}
     public Map<String, String> getDescription(){return description;}
