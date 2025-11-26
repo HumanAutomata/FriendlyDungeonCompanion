@@ -7,7 +7,10 @@ public class Main {
     Path dirPath = Paths.get("./state");
     if (!Files.exists(dirPath)) {
       Files.createDirectory(dirPath);
-      System.out.println("created the directory");
+    }
+    Path worldPath = Paths.get("./state/world");
+    if (!Files.exists(worldPath)) {
+      Files.createDirectory(worldPath);
     }
   }
 }
