@@ -2,7 +2,7 @@ package app.tabs;
 
 import app.Role;
 import app.MainFrame;
-import app.pages.RoleSelectionPage;
+import app.pages.StylizedButton;
 import app.logic.POI;
 import app.logic.POIHandler;
 import app.logic.Map;
@@ -53,7 +53,7 @@ public class MapTab extends JPanel {
   
   // initalize map helper functions
   private Map mapHelper = new Map();
-  private RoleSelectionPage rolePage = new RoleSelectionPage(null);
+  private StylizedButton styleButton = new StylizedButton();
 
   // load image from filepath
   private BufferedImage loadMapImage(String path) {
@@ -476,8 +476,6 @@ public class MapTab extends JPanel {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  
-
     // POI info panel displayed on right-hand side of screen
     JPanel infoPanel = new JPanel();
     infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -509,9 +507,9 @@ public class MapTab extends JPanel {
     JButton editPOIButton = new JButton("Edit Current Layer");
 
     // initialize buttons with fancy UI
-    rolePage.makeRounded(importButton, 20, rolePage.APP_RED, 18, 20, 10);
-    rolePage.makeRounded(exportButton, 20, rolePage.APP_RED, 18, 20, 10);
-    rolePage.makeRounded(editPOIButton, 20, rolePage.APP_RED, 18, 20, 10);
+    styleButton.makeRounded(importButton, 20, styleButton.APP_RED, 18, 20, 10);
+    styleButton.makeRounded(exportButton, 20, styleButton.APP_RED, 18, 20, 10);
+    styleButton.makeRounded(editPOIButton, 20, styleButton.APP_RED, 18, 20, 10);
 
     topBar.add(importButton);
     topBar.add(exportButton);
@@ -585,7 +583,7 @@ public class MapTab extends JPanel {
 
     // back button in bottom left
     backButton = new JButton("Back");
-    rolePage.makeRounded(backButton, 20, rolePage.APP_GRAY, 16, 16, 8);
+    styleButton.makeRounded(backButton, 20, styleButton.APP_GRAY, 16, 16, 8);
     backButton.setEnabled(false); // nothing to go back to yet, disable button
     backButton.setVisible(false); // set back button as invisible when we are at root POI
     bottomBar.add(backButton, BorderLayout.WEST);
