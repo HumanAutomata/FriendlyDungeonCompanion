@@ -1,22 +1,23 @@
 package app.tabs;
 
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import javax.swing.*;
-// import javax.swing.border.Border;
-import java.awt.*;
 import app.Role;
 import app.logic.PlayerCharacterSheet;
+import app.pages.StylizedButton;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class CharacterSheetTab extends JPanel {
 
     public PlayerCharacterSheet characterSheet = new PlayerCharacterSheet();
     
-    public JScrollPane scrollPane = new JScrollPane();
-
+    public StylizedButton sb = new StylizedButton();
     
+    public JScrollPane scrollPane = new JScrollPane();
 
     ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
     private JTextField name = new JTextField();
@@ -307,8 +308,6 @@ public class CharacterSheetTab extends JPanel {
     }};
 
     public CharacterSheetTab(Role role) {
-
-
         setLayout(new BorderLayout());
 
         ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
@@ -362,6 +361,11 @@ public class CharacterSheetTab extends JPanel {
         JPanel notes = new JPanel(new BorderLayout());
         notes.setBorder(BorderFactory.createTitledBorder("Notes"));
         notes.add(new JTextArea(), BorderLayout.CENTER);
+
+        JList<String> characterSheets = new JList<>();
+        characterSheets.addListSelectionListener(e -> {
+
+        });
 
         JPanel topPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         topPanel.add(characterInfoPanel);
@@ -470,79 +474,37 @@ public class CharacterSheetTab extends JPanel {
         JPanel skillsPanel1 = new JPanel(new GridLayout(18, 2));
         JPanel skillsPanel2 = new JPanel(new GridLayout(18, 1));
 
-        //<editor-fold desc="SKILLS PANEL ADDS ///////////////////////////////////////////////////">
-        skillsPanel1.add(acrobaticsCB);
-        skillsPanel1.add(acrobatics);
-        skillsPanel2.add(new JLabel("Acrobatics (DEX)"));
 
-        skillsPanel1.add(animalHandlingCB);
-        skillsPanel1.add(animalHandling);
-        skillsPanel2.add(new JLabel("Animal Handling (WIS)"));
+        JLabel[] skillsLabels =  new JLabel[18];
+        String[] skillsNames = {
+                "Acrobatics (DEX)", "Animal Handling (WIS)", "Arcana (INT)", "Athletics (STR)",
+                "Deception (CHA)", "History (INT)", "Insight (WIS)", "Intimidation (CHA)",
+                "Investigation (INT)", "Medicine (WIS)", "Nature (INT)", "Perception (WIS)",
+                "Performance (CHA)", "Persuasion (CHA)", "Religion (INT)", "Sleight of Hand (DEX)",
+                "Stealth (DEX)", "Survival (WIS)"
+        };
 
-        skillsPanel1.add(arcanaCB);
-        skillsPanel1.add(arcana);
-        skillsPanel2.add(new JLabel("Arcana (INT)"));
+        JCheckBox[] skillsBoxes = {
+                acrobaticsCB, animalHandlingCB, arcanaCB, athleticsCB, deceptionCB,
+                historyCB, insightCB, intimidationCB, investigationCB, medicineCB,
+                natureCB, perceptionCB, performanceCB, persuasionCB, religionCB,
+                sleightCB, stealthCB, survivalCB
+        };
 
-        skillsPanel1.add(athleticsCB);
-        skillsPanel1.add(athletics);
-        skillsPanel2.add(new JLabel("Athletics (STR)"));
+        JTextField[] skillsFields = {
+                acrobatics, animalHandling, arcana, athletics, deception,
+                history, insight, intimidation, investigation, medicine,
+                nature, perception, performance, persuasion, religion,
+                sleight, stealth, survival
+        };
 
-        skillsPanel1.add(deceptionCB);
-        skillsPanel1.add(deception);
-        skillsPanel2.add(new JLabel("Deception (CHA)"));
-
-        skillsPanel1.add(historyCB);
-        skillsPanel1.add(history);
-        skillsPanel2.add(new JLabel("History (INT)"));
-
-        skillsPanel1.add(insightCB);
-        skillsPanel1.add(insight);
-        skillsPanel2.add(new JLabel("Insight (WIS)"));
-
-        skillsPanel1.add(intimidationCB);
-        skillsPanel1.add(intimidation);
-        skillsPanel2.add(new JLabel("Intimidation (CHA)"));
-
-        skillsPanel1.add(investigationCB);
-        skillsPanel1.add(investigation);
-        skillsPanel2.add(new JLabel("Investigation (INT)"));
-
-        skillsPanel1.add(medicineCB);
-        skillsPanel1.add(medicine);
-        skillsPanel2.add(new JLabel("Medicine (WIS)"));
-
-        skillsPanel1.add(natureCB);
-        skillsPanel1.add(nature);
-        skillsPanel2.add(new JLabel("Nature (INT)"));
-
-        skillsPanel1.add(perceptionCB);
-        skillsPanel1.add(perception);
-        skillsPanel2.add(new JLabel("Perception (WIS)"));
-
-        skillsPanel1.add(performanceCB);
-        skillsPanel1.add(performance);
-        skillsPanel2.add(new JLabel("Performance (CHA)"));
-
-        skillsPanel1.add(persuasionCB);
-        skillsPanel1.add(persuasion);
-        skillsPanel2.add(new JLabel("Persuasion (CHA)"));
-
-        skillsPanel1.add(religionCB);
-        skillsPanel1.add(religion);
-        skillsPanel2.add(new JLabel("Religion (INT)"));
-
-        skillsPanel1.add(sleightCB);
-        skillsPanel1.add(sleight);
-        skillsPanel2.add(new JLabel("Sleight of Hand (DEX)"));
-
-        skillsPanel1.add(stealthCB);
-        skillsPanel1.add(stealth);
-        skillsPanel2.add(new JLabel("Stealth (DEX)"));
-
-        skillsPanel1.add(survivalCB);
-        skillsPanel1.add(survival);
-        skillsPanel2.add(new JLabel("Survival (WIS)"));
-        //</editor-fold>
+        for (int i = 0; i < skillsBoxes.length; i++) {
+            skillsLabels[i] = new JLabel(skillsNames[i]);
+            //skillsLabels[i].setToolTipText(characterSheet.viewStatBreakDown(name));
+            skillsPanel1.add(skillsBoxes[i]);
+            skillsPanel1.add(skillsFields[i]);
+            skillsPanel2.add(skillsLabels[i]);
+        }
 
         skillsPanel.add(skillsPanel1, BorderLayout.WEST);
         skillsPanel.add(skillsPanel2, BorderLayout.CENTER);
@@ -554,29 +516,27 @@ public class CharacterSheetTab extends JPanel {
         JPanel throwsPanel2 = new JPanel(new GridLayout(6, 1));
 
         //<editor-fold desc="THROWS PANEL ADDS //////////////////////////////////////////////">
-        throwsPanel1.add(strengthThrowsCB);
-        throwsPanel1.add(strengthThrows);
-        throwsPanel2.add(new JLabel("Strength"));
+        JCheckBox[] throwsBoxes = {
+                strengthThrowsCB, dexterityThrowsCB, constitutionThrowsCB,
+                intelligenceThrowsCB, wisdomThrowsCB, charismaThrowsCB
+        };
 
-        throwsPanel1.add(dexterityThrowsCB);
-        throwsPanel1.add(dexterityThrows);
-        throwsPanel2.add(new JLabel("Dexterity"));
+        JTextField[] throwsFields = {
+                strengthThrows, dexterityThrows, constitutionThrows,
+                intelligenceThrows, wisdomThrows, charismaThrows
+        };
 
-        throwsPanel1.add(constitutionThrowsCB);
-        throwsPanel1.add(constitutionThrows);
-        throwsPanel2.add(new JLabel("Constitution"));
+        String[] throwsLabels = {
 
-        throwsPanel1.add(intelligenceThrowsCB);
-        throwsPanel1.add(intelligenceThrows);
-        throwsPanel2.add(new JLabel("Intelligence"));
+                "Strength", "Dexterity", "Constitution",
+                "Intelligence", "Wisdom", "Charisma"
+        };
 
-        throwsPanel1.add(wisdomThrowsCB);
-        throwsPanel1.add(wisdomThrows);
-        throwsPanel2.add(new JLabel("Wisdom"));
-
-        throwsPanel1.add(charismaThrowsCB);
-        throwsPanel1.add(charismaThrows);
-        throwsPanel2.add(new JLabel("Charisma"));
+        for (int i = 0; i < throwsBoxes.length; i++) {
+            throwsPanel1.add(throwsBoxes[i]);
+            throwsPanel1.add(throwsFields[i]);
+            throwsPanel2.add(new JLabel(throwsLabels[i]));
+        }
         //</editor-fold>
 
         throwsPanel.add(throwsPanel1, BorderLayout.WEST);
@@ -758,10 +718,17 @@ public class CharacterSheetTab extends JPanel {
         ////////////////////////////////////////////////////////////////////////////////////SPELL PAGE
         ////////////////////////////////////////////////////////////////////////////////////SPELL PAGE
 
-        // Level 0 - Cantrips (special case)
-        JPanel levelZeroPanel = new JPanel(new BorderLayout(5, 0));
+        /////////////////////////////////////////////////////////////////////////////////////////////LEVEL 0
+
+        //<editor-fold desc="//////////////////////////////////////////////////////////SPELL LEVELS">
+        JPanel levelZeroPanel = new JPanel(new BorderLayout(5,0));
+        JLabel levelZero = new JLabel("level 0");
+        //levelZero.setFont(new Font("Arial", Font.PLAIN, 24));
+        levelZero.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         JLabel cantrips = new JLabel("CANTRIPS", SwingConstants.CENTER);
+        //cantrips.setFont(new Font("Arial", Font.PLAIN, 18));
         cantrips.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        //levelZeroPanel.add(levelZero, BorderLayout.WEST);
         levelZeroPanel.add(cantrips, BorderLayout.CENTER);
 
         JPanel cantripsPanel = new JPanel(new GridLayout(10, 1, 0, 5));
@@ -870,15 +837,21 @@ public class CharacterSheetTab extends JPanel {
         ////////////////////////////////////////////////////////////////////////////////////BOTTOM PANEL
 
         JButton mainButton = new JButton("MAIN");
+        JButton spellButton = new JButton("SPELLS");
+
         mainButton.addActionListener(e -> {
+            sb.makeRounded(mainButton,10, sb.APP_PURPLE, 16, 10, 5);
+            sb.makeRounded(spellButton,10, sb.APP_GRAY, 16, 10, 5);
             add(mainPanel, BorderLayout.CENTER);
             topPanel.setVisible(true);
             mainPanel.setVisible(true);
             mainSpellsPanel.setVisible(false);
         });
 
-        JButton spellButton = new JButton("SPELLS");
+
         spellButton.addActionListener(e -> {
+            sb.makeRounded(spellButton,10, sb.APP_PURPLE, 16, 10, 5);
+            sb.makeRounded(mainButton,10, sb.APP_GRAY, 16, 10, 5);
             add(mainSpellsPanel, BorderLayout.CENTER);
             topPanel.setVisible(false);
             mainPanel.setVisible(false);
@@ -923,6 +896,9 @@ public class CharacterSheetTab extends JPanel {
 //-----------------------------------------------End of save section---------------------------------------------------
 
         JPanel bottomPanel = new JPanel(new FlowLayout());
+        sb.makeRounded(saveButton,10, sb.APP_RED, 16, 10, 5);
+        sb.makeRounded(mainButton,10, sb.APP_PURPLE, 16, 10, 5);
+        sb.makeRounded(spellButton,10, sb.APP_GRAY, 16, 10, 5);
         bottomPanel.add(saveButton);
         bottomPanel.add(mainButton);
         bottomPanel.add(spellButton);
@@ -1107,9 +1083,13 @@ public class CharacterSheetTab extends JPanel {
 
 
         String[][] attacksIn = (String[][]) characterSheet.getAttacks();
+        
         for(int i = 0; i < attacks.length; i++){
             for(int j = 0; j < attacks[0].length; j++) {
+                attacks[i][j] = new JTextField();
                 attacks[i][j].setText(attacksIn[i][j]);
+                System.out.println(attacksIn[i][j]);
+                System.out.println(attacks[i][j].getText());
             }
         }
 
