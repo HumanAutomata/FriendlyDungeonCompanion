@@ -3,8 +3,11 @@ package app.tabs;
 import app.Role;
 import app.logic.PlayerCharacterSheet;
 import app.pages.StylizedButton;
+import app.pages.StylizedTextField;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -195,13 +198,13 @@ public class CharacterSheetTab extends JPanel {
     private JCheckBox wisdomThrowsCB       = new JCheckBox();
     private JCheckBox charismaThrowsCB     = new JCheckBox();
     // saving throws profeciencies - Gabe likes his maps
-    private Map<String, JTextField> savingProficiencies = new HashMap<String, JTextField>() {{
-        put("strength", strengthThrows);
-        put("dexterity", dexterityThrows );
-        put("constitution", constitutionThrows);
-        put("intelligence", intelligenceThrows);
-        put("wisdom", wisdomThrows);
-        put("charisma", charismaThrows);
+    private Map<String, JCheckBox> savingProficiencies = new HashMap<String, JCheckBox>() {{
+        put("strength", strengthThrowsCB);
+        put("dexterity", dexterityThrowsCB);
+        put("constitution", constitutionThrowsCB);
+        put("intelligence", intelligenceThrowsCB);
+        put("wisdom", wisdomThrowsCB);
+        put("charisma", charismaThrowsCB);
     }};
 
     ////////////////////////////////////////////////////////////////////////////HP STUFF
@@ -310,51 +313,36 @@ public class CharacterSheetTab extends JPanel {
     public CharacterSheetTab(Role role) {
         setLayout(new BorderLayout());
 
+        // Stylers
+        StylizedTextField stf = new StylizedTextField();
+        Color panelBg = getBackground();
+
         ////////////////////////////////////////////////////////////////////////////////////////////CHARACTER INFO
 
-        JPanel characterInfoPanel = new JPanel(new GridLayout(3, 4, 5, 0));
+        JPanel characterInfoPanel = new JPanel(new GridLayout(2, 3, 10, 5));
         characterInfoPanel.setBorder(BorderFactory.createTitledBorder("Character Info"));
 
-        characterInfoPanel.add(new JLabel("Name:"));
-        characterInfoPanel.add(name);
-        characterInfoPanel.add(new JLabel("Race:"));
-        characterInfoPanel.add(race);
-
-        characterInfoPanel.add(new JLabel("Class:"));
-        characterInfoPanel.add(characterClass);
-        characterInfoPanel.add(new JLabel("Level:"));
-        characterInfoPanel.add(level);
-
-        characterInfoPanel.add(new JLabel("Background:"));
-        characterInfoPanel.add(background);
-        characterInfoPanel.add(new JLabel("Alignment:"));
-        characterInfoPanel.add(alignment);
+        characterInfoPanel.add(stf.createLabeledField(name, "Name", 150, panelBg));
+        characterInfoPanel.add(stf.createLabeledField(race, "Race", 150, panelBg));
+        characterInfoPanel.add(stf.createLabeledField(characterClass, "Class", 150, panelBg));
+        characterInfoPanel.add(stf.createLabeledField(level, "Level", 150, panelBg));
+        characterInfoPanel.add(stf.createLabeledField(background, "Background", 150, panelBg));
+        characterInfoPanel.add(stf.createLabeledField(alignment, "Alignment", 150, panelBg));
 
         ////////////////////////////////////////////////////////////////////////////////////////////SPELL STATS
 
-        JPanel spellStatsPanel = new JPanel(new GridLayout(2, 4));
+        JPanel spellStatsPanel = new JPanel(new GridLayout(2, 2, 10, 5));
         spellStatsPanel.setBorder(BorderFactory.createTitledBorder("Spell Stats"));
 
-        spellStatsPanel.add(spellCastingAbility);
         spellCastingAbility.setHorizontalAlignment(JTextField.CENTER);
-        spellCastingAbility.setFont(new Font("Arial", Font.PLAIN, 24));
-
-        spellStatsPanel.add(spellSaveDC);
         spellSaveDC.setHorizontalAlignment(JTextField.CENTER);
-        spellSaveDC.setFont(new Font("Arial", Font.PLAIN, 24));
-
-        spellStatsPanel.add(spellAttackBonus);
         spellAttackBonus.setHorizontalAlignment(JTextField.CENTER);
-        spellAttackBonus.setFont(new Font("Arial", Font.PLAIN, 24));
-
-        spellStatsPanel.add(sorcererPoints);
         sorcererPoints.setHorizontalAlignment(JTextField.CENTER);
-        sorcererPoints.setFont(new Font("Arial", Font.PLAIN, 24));
 
-        spellStatsPanel.add(new JLabel("Casting Ability"));
-        spellStatsPanel.add(new JLabel("Save DC"));
-        spellStatsPanel.add(new JLabel("Attack Bonus"));
-        spellStatsPanel.add(new JLabel("Sorcerer Points"));
+        spellStatsPanel.add(stf.createLabeledField(spellCastingAbility, "Casting Ability", 120, panelBg));
+        spellStatsPanel.add(stf.createLabeledField(spellSaveDC, "Save DC", 120, panelBg));
+        spellStatsPanel.add(stf.createLabeledField(spellAttackBonus, "Attack Bonus", 120, panelBg));
+        spellStatsPanel.add(stf.createLabeledField(sorcererPoints, "Sorcerer Points", 120, panelBg));
 
         ////////////////////////////////////////////////////////////////////////////////////////////TOP PANEL
 
@@ -367,9 +355,16 @@ public class CharacterSheetTab extends JPanel {
 
         });
 
+        // Wrap panels to prevent vertical stretching from GridLayout
+        JPanel characterInfoWrapper = new JPanel(new BorderLayout());
+        characterInfoWrapper.add(characterInfoPanel, BorderLayout.NORTH);
+
+        JPanel spellStatsWrapper = new JPanel(new BorderLayout());
+        spellStatsWrapper.add(spellStatsPanel, BorderLayout.NORTH);
+
         JPanel topPanel = new JPanel(new GridLayout(1, 3, 10, 10));
-        topPanel.add(characterInfoPanel);
-        topPanel.add(spellStatsPanel);
+        topPanel.add(characterInfoWrapper);
+        topPanel.add(spellStatsWrapper);
         topPanel.add(notes);
         add(topPanel, BorderLayout.NORTH);
 
@@ -892,6 +887,7 @@ public class CharacterSheetTab extends JPanel {
 
             // save function
             characterSheet.save(statsMap, infoMap, descriptionMap, attackArray, spells);
+            JOptionPane.showMessageDialog(this, "Character saved!", "Saved", JOptionPane.INFORMATION_MESSAGE);
         });
 //-----------------------------------------------End of save section---------------------------------------------------
 
@@ -904,6 +900,9 @@ public class CharacterSheetTab extends JPanel {
         bottomPanel.add(spellButton);
 
         add(bottomPanel, BorderLayout.SOUTH);
+
+        // Set up auto-calculation for ability modifiers
+        setupAbilityModifierListeners();
 
 //-----------------------------LOAD---------------------------
         loadData();
@@ -941,6 +940,52 @@ public class CharacterSheetTab extends JPanel {
         
         return builderPanel;
     }
+
+    // Calculate ability modifier from score using D&D 5e formula
+    private String calculateModifier(int score) {
+        int mod = (int) Math.floor((score - 10) / 2.0);
+        return mod >= 0 ? "+" + mod : String.valueOf(mod);
+    }
+
+    // Set up auto-calculation for ability modifiers
+    private void setupAbilityModifierListeners() {
+        // Make all modifier fields non-editable
+        for (JTextField modField : abilitiesMod.values()) {
+            modField.setEditable(false);
+            modField.setBackground(new Color(240, 240, 240));
+        }
+
+        // Add listeners to each ability score field
+        for (Map.Entry<String, JTextField> entry : abilities.entrySet()) {
+            String abilityName = entry.getKey();
+            JTextField scoreField = entry.getValue();
+            JTextField modField = abilitiesMod.get(abilityName);
+
+            scoreField.getDocument().addDocumentListener(new DocumentListener() {
+                private void updateModifier() {
+                    try {
+                        String text = scoreField.getText().trim();
+                        if (!text.isEmpty()) {
+                            int score = Integer.parseInt(text);
+                            modField.setText(calculateModifier(score));
+                        } else {
+                            modField.setText("");
+                        }
+                    } catch (NumberFormatException e) {
+                        modField.setText("");
+                    }
+                }
+
+                @Override
+                public void insertUpdate(DocumentEvent e) { updateModifier(); }
+                @Override
+                public void removeUpdate(DocumentEvent e) { updateModifier(); }
+                @Override
+                public void changedUpdate(DocumentEvent e) { updateModifier(); }
+            });
+        }
+    }
+
     private Map<String, Object> recursiveToStringMap(Map<String, Object> swingMap) {
             
         Map<String, Object> stringMap = new HashMap<>();
@@ -1021,15 +1066,24 @@ public class CharacterSheetTab extends JPanel {
             else if(swingComponent instanceof JCheckBox && value instanceof Boolean) {
                 ((JCheckBox)swingComponent).setSelected((Boolean)value);
             }
-            // else if(swingComponent instanceof JCheckBox[] && value instanceof List){
-            //     JCheckBox[] boxes = (JCheckBox[])swingComponent;
-            //     List<?> values = (List<?>)value;
-            //     for(int i = 0; i < Math.min(boxes.length, values.size()); i++){
-            //         if(boxes[i] != null && values.get(i) instanceof Boolean) {
-            //             boxes[i].setSelected((Boolean)values.get(i));
-            //         }
-            //     }
-            // }
+            else if(swingComponent instanceof JCheckBox[] && value instanceof List){
+                JCheckBox[] boxes = (JCheckBox[])swingComponent;
+                List<?> values = (List<?>)value;
+                for(int i = 0; i < Math.min(boxes.length, values.size()); i++){
+                    if(boxes[i] != null && values.get(i) instanceof Boolean) {
+                        boxes[i].setSelected((Boolean)values.get(i));
+                    }
+                }
+            }
+            else if(swingComponent instanceof JCheckBox[] && value instanceof Boolean[]){
+                JCheckBox[] boxes = (JCheckBox[])swingComponent;
+                Boolean[] values = (Boolean[])value;
+                for(int i = 0; i < Math.min(boxes.length, values.length); i++){
+                    if(boxes[i] != null && values[i] != null) {
+                        boxes[i].setSelected(values[i]);
+                    }
+                }
+            }
             else if(swingComponent instanceof JCheckBox[] && value instanceof boolean[]){
                 JCheckBox[] boxes = (JCheckBox[])swingComponent;
                 boolean[] values = (boolean[])value;
@@ -1039,17 +1093,25 @@ public class CharacterSheetTab extends JPanel {
                     }
                 }
             }
-            // else if(swingComponent instanceof JRadioButton[] && value instanceof List){
-            //     JRadioButton[] buttons = (JRadioButton[])swingComponent;
-            //     List<?> values = (List<?>)value;
-            //     for(int i = 0; i < Math.min(buttons.length, values.size()); i++){
-            //         if(buttons[i] != null && values.get(i) instanceof Boolean) {
-            //             buttons[i].setSelected((Boolean)values.get(i));
-            //         }
-            //     }
-            // }
+            else if(swingComponent instanceof JRadioButton[] && value instanceof List){
+                JRadioButton[] buttons = (JRadioButton[])swingComponent;
+                List<?> values = (List<?>)value;
+                for(int i = 0; i < Math.min(buttons.length, values.size()); i++){
+                    if(buttons[i] != null && values.get(i) instanceof Boolean) {
+                        buttons[i].setSelected((Boolean)values.get(i));
+                    }
+                }
+            }
+            else if(swingComponent instanceof JRadioButton[] && value instanceof Boolean[]){
+                JRadioButton[] buttons = (JRadioButton[])swingComponent;
+                Boolean[] values = (Boolean[])value;
+                for(int i = 0; i < Math.min(buttons.length, values.length); i++){
+                    if(buttons[i] != null && values[i] != null) {
+                        buttons[i].setSelected(values[i]);
+                    }
+                }
+            }
             else if( swingComponent instanceof JRadioButton[] && value instanceof boolean[]){
-                System.out.println("FOUND IT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 JRadioButton[] buttons = (JRadioButton[])swingComponent;
                 boolean[] values = (boolean[])value;
                 for(int i = 0; i < Math.min(buttons.length, values.length); i++){
@@ -1083,13 +1145,10 @@ public class CharacterSheetTab extends JPanel {
 
 
         String[][] attacksIn = (String[][]) characterSheet.getAttacks();
-        
+
         for(int i = 0; i < attacks.length; i++){
             for(int j = 0; j < attacks[0].length; j++) {
-                attacks[i][j] = new JTextField();
                 attacks[i][j].setText(attacksIn[i][j]);
-                System.out.println(attacksIn[i][j]);
-                System.out.println(attacks[i][j].getText());
             }
         }
 

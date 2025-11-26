@@ -60,7 +60,7 @@ public class HomePage extends JPanel {
     if (role == Role.DM) {
       // Tools tab has not been implemented
       //tabs.add("Tools", new ToolsTab(role));
-      // tabs.add("NPC Character Sheet", new NPCTab(role));
+      tabs.add("NPC Character Sheet", new NPCTab(role));
     } else {
       tabs.add("Character Sheet", new CharacterSheetTab(role));
       tabs.add("Inventory", new InventoryTab(role));

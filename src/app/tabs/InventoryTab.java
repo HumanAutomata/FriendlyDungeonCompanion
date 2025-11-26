@@ -5,12 +5,26 @@ import app.pages.StylizedButton;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 public class InventoryTab extends JPanel {
+
+    private static final String INVENTORY_DIR = "state/inventory";
+    private static final String INVENTORY_FILE = "state/inventory/inventory.json";
+
+    private Map<String, JTextField[][]> inventory = new HashMap<>();
+    private String[] tableNames = {
+            "FUNDS", "WEAPONS", "WEARABLES", "SPECIAL", "CONSUMABLES",
+            "COMPONENTS", "DOCUMENTS", "CONTAINERS", "AMMUNITION", "MAGIC ITEMS",
+            "ATTUNED", "LOOT", "MISC"
+    };
 
     public InventoryTab(Role role) {
 
@@ -24,15 +38,7 @@ public class InventoryTab extends JPanel {
 
         String[] fundsNames = {"CP", "SP", "EP", "GP", "PP"};
 
-        String[] tableNames = {
-                "FUNDS", "WEAPONS", "WEARABLES", "SPECIAL", "CONSUMABLES",
-                "COMPONENTS", "DOCUMENTS", "CONTAINERS", "AMMUNITION", "MAGIC ITEMS",
-                "ATTUNED", "LOOT", "MISC"
-        };
-
         /// /////////////////////////////////////////////////////////////////////////////ADD ALL TABLES TO MAP
-
-        Map<String, JTextField[][]> inventory = new HashMap<>();
 
         JTextField[][] funds = new JTextField[5][1];
         inventory.put("FUNDS", funds);
@@ -58,52 +64,8 @@ public class InventoryTab extends JPanel {
         JButton saveButton = new JButton("SAVE");
         sb.makeRounded(saveButton,10, sb.APP_RED, 16, 10, 5);
         saveButton.addActionListener(e -> {
-
-            System.out.println(inventory.get("LOOT")[5][1].getText());
-            System.out.println(Arrays.deepToString(inventory.get("LOOT")));
-
-            /// //////////// GET TEXT FROM FUNDS TABLE
-
-            Map<String, String> fundsMap = new HashMap<>();
-            for (String fundLable : fundsNames){
-                int i = 0;
-                fundsMap.put(fundLable, inventory.get("FUNDS")[i][0].getText());
-                i++;
-            }
-
-            /// ///////////// GET TEXT FROM ALL OTHER TABLES
-
-            Map<String, String[][]> stringMap = new HashMap<>();
-
-            for (String key : inventory.keySet()) {
-
-                JTextField[][] table = inventory.get(key);
-
-                int rows = table.length;
-                int cols = table[0].length;
-
-                String[][] convertedTable = new String[rows][cols];
-
-                for (int r = 0; r < rows; r++) {
-                    for (int c = 0; c < cols; c++) {
-                        JTextField tf = table[r][c];
-                        convertedTable[r][c] = tf.getText();
-                    }
-                }
-
-                stringMap.put(key, convertedTable);
-            }
-
-            for (Map.Entry<String, String> entry : fundsMap.entrySet()) {
-                System.out.println(entry.getKey());
-                System.out.println(entry.getValue());
-            }
-
-            for (String name : tableNames) {
-                if (name.equals("FUNDS")) {continue;}
-                System.out.println(Arrays.deepToString(stringMap.get(name)));
-            }
-
+            saveInventory();
+            JOptionPane.showMessageDialog(this, "Inventory saved!", "Saved", JOptionPane.INFORMATION_MESSAGE);
         });
 
         /// ///////////////////////////////////////////////////////////////////////////SAVE BUTTON PANEL
@@ -114,6 +76,8 @@ public class InventoryTab extends JPanel {
         add(bottomPanel, BorderLayout.SOUTH);
         add(main);
 
+        // Load saved inventory data
+        loadInventory();
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,6 +155,84 @@ public class InventoryTab extends JPanel {
             outer.add(scrollPane, BorderLayout.CENTER);
             return outer;
 
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////         SAVE / LOAD METHODS          //////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private void saveInventory() {
+        // Convert JTextField[][] maps to String[][] maps
+        Map<String, String[][]> stringMap = new HashMap<>();
+
+        for (String key : inventory.keySet()) {
+            JTextField[][] table = inventory.get(key);
+            int rows = table.length;
+            int cols = table[0].length;
+
+            String[][] convertedTable = new String[rows][cols];
+
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < cols; c++) {
+                    JTextField tf = table[r][c];
+                    convertedTable[r][c] = tf != null ? tf.getText() : "";
+                }
+            }
+
+            stringMap.put(key, convertedTable);
+        }
+
+        // Save to JSON file
+        try {
+            Files.createDirectories(Paths.get(INVENTORY_DIR));
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String json = gson.toJson(stringMap);
+            Files.write(Paths.get(INVENTORY_FILE), json.getBytes());
+            System.out.println("Successfully saved inventory to: " + INVENTORY_FILE);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error saving inventory");
+        }
+    }
+
+    private void loadInventory() {
+        try {
+            Path filePath = Paths.get(INVENTORY_FILE);
+
+            if (!Files.exists(filePath)) {
+                System.out.println("No inventory file found, starting fresh");
+                return;
+            }
+
+            String json = Files.readString(filePath);
+            Gson gson = new Gson();
+            Map<String, List<List<String>>> loadedData = gson.fromJson(json,
+                new TypeToken<Map<String, List<List<String>>>>(){}.getType());
+
+            if (loadedData == null) return;
+
+            // Apply loaded data to UI components
+            for (String key : loadedData.keySet()) {
+                if (!inventory.containsKey(key)) continue;
+
+                JTextField[][] table = inventory.get(key);
+                List<List<String>> data = loadedData.get(key);
+
+                for (int r = 0; r < Math.min(table.length, data.size()); r++) {
+                    List<String> row = data.get(r);
+                    for (int c = 0; c < Math.min(table[r].length, row.size()); c++) {
+                        if (table[r][c] != null && row.get(c) != null) {
+                            table[r][c].setText(row.get(c));
+                        }
+                    }
+                }
+            }
+
+            System.out.println("Successfully loaded inventory from: " + INVENTORY_FILE);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error loading inventory");
         }
     }
 }

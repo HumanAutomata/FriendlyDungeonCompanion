@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.nio.file.*;
 
 abstract class CharacterSheet{
-    
+
     // public String name;
     private Map<String, String> characterInfo;
     private Map<String, String> description;
@@ -19,6 +19,10 @@ abstract class CharacterSheet{
     private String[][] attacks;
     private Map<String, Object> spells;
     public Inventory inventory;
+
+    // Save path for this character sheet
+    protected String savePath = "state/characterSheet/characterSheet.json";
+    protected String saveDir = "state/characterSheet";
     // creates a dictionary for all the base stats
     // public Map<String, Integer> baseStats = new HashMap<>() {{
     //     String[] stats = {
@@ -72,11 +76,31 @@ abstract class CharacterSheet{
 
     //simpler constructor
     public CharacterSheet(){
+        loadFromFile();
+    }
+
+    // Constructor with custom path
+    public CharacterSheet(String directory, String filename){
+        this.saveDir = directory;
+        this.savePath = directory + "/" + filename + ".json";
+        loadFromFile();
+    }
+
+    // Load data from the current savePath
+    protected void loadFromFile(){
         try {
-            Files.createDirectories(Paths.get("state/characterSheet"));
+            Files.createDirectories(Paths.get(saveDir));
+            Path filePath = Paths.get(savePath);
+
+            if (!Files.exists(filePath)) {
+                // Initialize with empty data for new characters
+                initializeEmpty();
+                return;
+            }
+
             // Read JSON file
-            String characterJSON = Files.readString(Paths.get("state/characterSheet/characterSheet.json"));
-            
+            String characterJSON = Files.readString(filePath);
+
             // Parse to Map
             Gson gson = new Gson();
             Map<String, Object> characterMap = gson.fromJson(characterJSON, Map.class);
@@ -87,10 +111,40 @@ abstract class CharacterSheet{
             stats = (HashMap<String, Object>)characterHashMap.get("stats");
             attacks = (String[][]) characterHashMap.get("attacks");
             spells = (HashMap<String, Object>)  characterHashMap.get("spells");
-            // System.out.println(characterInfo);
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error - Failed to fetch JSON!");
+            System.out.println("Error - Failed to fetch JSON from: " + savePath);
+            initializeEmpty();
+        }
+    }
+
+    // Initialize empty data for new characters
+    protected void initializeEmpty(){
+        characterInfo = new HashMap<>();
+        description = new HashMap<>();
+        stats = new HashMap<>();
+        attacks = new String[8][3];
+        for(int i = 0; i < 8; i++) {
+            for(int j = 0; j < 3; j++) {
+                attacks[i][j] = "";
+            }
+        }
+        spells = new HashMap<>();
+    }
+
+    // Change the save path and reload
+    public void switchTo(String filename){
+        this.savePath = saveDir + "/" + filename + ".json";
+        loadFromFile();
+    }
+
+    // Delete this character's save file
+    public void deleteFile(){
+        try {
+            Files.deleteIfExists(Paths.get(savePath));
+            System.out.println("Deleted: " + savePath);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -126,26 +180,22 @@ abstract class CharacterSheet{
     // saves the CharacterSheet to a json
     public void saveJSON() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        
+
         // create dictionary for the charactersheet
         Map<String, Object> characterMap = new HashMap<>();
-        // characterMap.put("name", name);
-        // characterMap.put("class", dndClass);
-        // characterMap.put("baseStats", baseStats);
         characterMap.put("description", description);
         characterMap.put("stats", stats);
         characterMap.put("characterInfo", characterInfo);
         characterMap.put("attacks", attacks);
         characterMap.put("spells", spells);
         characterMap.put("inventory", inventory);
-        
 
         // convert to json and save
         String json = gson.toJson(characterMap);
         try {
-            
-            Files.write(Paths.get("state/characterSheet/characterSheet.json"), json.getBytes());
-            System.out.println("Successfully saved Character Sheet");
+            Files.createDirectories(Paths.get(saveDir));
+            Files.write(Paths.get(savePath), json.getBytes());
+            System.out.println("Successfully saved Character Sheet to: " + savePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
