@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class POI {
+    public String name;
     public String title;
     public String description;
     public String imagePath;
